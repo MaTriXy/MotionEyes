@@ -1,4 +1,4 @@
-# 👀 MotionEyes
+# MotionEyes
 
 ![MotionEyes banner](https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/motioneyes-banner.jpg)
 
