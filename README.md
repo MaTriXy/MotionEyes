@@ -10,6 +10,12 @@ It combines:
 
 The goal is to let agents read real motion, geometry, and scroll values from logs instead of guessing from code.
 
+## Skill Demo
+
+GIF capture of the skill tracing and printing runtime motion values:
+
+![MotionEyes skill demo](https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/trim.gif)
+
 ## What MotionEyes Is
 
 MotionEyes turns animation behavior into structured, timestamped evidence.
