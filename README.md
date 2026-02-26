@@ -1,4 +1,4 @@
-# MotionEyes
+# 👀 MotionEyes
 
 MotionEyes is an agent-first SwiftUI motion observability system.
 
