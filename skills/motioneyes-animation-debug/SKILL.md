@@ -28,24 +28,42 @@ Follow this exact order:
 Add instrumentation only to the minimum set of views needed to test the complaint.
 
 - Use stable, semantic trace names that match the user complaint.
-- Prefer values that explain intent, such as `opacity`, `scale`, `offset`, `position`, progress values, and key geometry properties.
+- Set the values to the same name as the property, so it's easier to identify.
 - Use geometry tracing when motion is relative to container or sibling layout.
 
 Example template:
 
 ```swift
 import MotionEyes
+import SwiftUI
 
-SomeView()
-    .motionTrace("Card Motion", fps: 30) {
-        Trace.value("opacity", opacity)
-        Trace.value("offset", CGPoint(x: offset.width, y: offset.height))
-        Trace.geometry(
-            "cardFrame",
-            properties: [.minX, .minY, .width, .height],
-            in: .global
-        )
+struct CardMotionExample: View {
+    @State private var opacity = 1.0
+    @State private var offset = CGSize.zero
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(.orange)
+            .frame(width: 180, height: 120)
+            .opacity(opacity)
+            .offset(offset)
+            .motionTrace("Card Motion", fps: 30) {
+                Trace.value("opacity", opacity)
+                Trace.value("offset", CGPoint(x: offset.width, y: offset.height))
+                Trace.geometry(
+                    "cardFrame",
+                    properties: [.minX, .minY, .width, .height],
+                    in: .global
+                )
+            }
+            .onTapGesture {
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    opacity = opacity == 1 ? 0.4 : 1
+                    offset = offset == .zero ? CGSize(width: 0, height: 36) : .zero
+                }
+            }
     }
+}
 ```
 
 ## Log Capture
@@ -101,6 +119,7 @@ At the end of every run:
 - Fade timing bug: trace `opacity` and verify fade begins/ends when expected.
 - Wrong direction bug: trace Y-related value and confirm sign/trend match expected motion.
 - Relative motion bug: trace two objects and verify their positional relationship over time.
+- No motion desired: if something is meant to remain static during transition.
 - Existing instrumentation safety: preserve user-authored MotionEyes traces.
 - MCP unavailable: use CLI log stream and continue analysis.
 - Missing package: auto-integrate MotionEyes, then execute normal workflow.
