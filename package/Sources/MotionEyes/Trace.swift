@@ -38,4 +38,27 @@ public enum Trace {
             )
         )
     }
+
+    public static func scrollGeometry(
+        _ name: String = "scrollGeometry",
+        properties: Set<MotionScrollGeometryProperty> = [
+            .contentOffsetX,
+            .contentOffsetY,
+            .visibleRectMinY,
+            .visibleRectHeight,
+        ],
+        precision: Int = 2,
+        epsilon: Double = 0.1
+    ) -> MotionTraceMetric {
+        MotionTraceMetric(
+            kind: .scrollGeometry(
+                .init(
+                    name: name,
+                    properties: properties,
+                    precision: max(0, precision),
+                    epsilon: max(0, epsilon)
+                )
+            )
+        )
+    }
 }

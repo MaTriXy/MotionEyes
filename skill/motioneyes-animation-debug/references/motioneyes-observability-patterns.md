@@ -16,6 +16,9 @@ Pick metrics that represent the user complaint directly.
   - `Trace.value("position", CGPoint(x: position.x, y: position.y))`
 - Layout/frame-driven issues:
   - `Trace.geometry("frame", properties: [.minX, .minY, .width, .height], in: .global)`
+- Scroll behavior issues:
+  - `Trace.scrollGeometry("scrollMetrics")`
+  - `Trace.scrollGeometry("scrollMetrics", properties: [.contentOffsetY, .visibleRectMinY, .visibleRectHeight])`
 
 Prefer one to three focused metrics first; expand only if root cause remains unclear.
 
@@ -60,6 +63,20 @@ Common mismatch signatures:
 - Delayed `Start`: lagging follower.
 - Early `End`: follower stops too soon.
 
+## Scroll Geometry Interpretation
+
+For scroll jump, drift, or restoration issues:
+
+1. Place `Trace.scrollGeometry` on the `ScrollView` container.
+2. Start with `contentOffsetY`, `visibleRectMinY`, and `visibleRectHeight`.
+3. Compare values before navigation, during transition, and after return.
+
+Common mismatch signatures:
+
+- Offset discontinuity: sudden `contentOffsetY` jump after return.
+- Visible rect mismatch: `visibleRectMinY` diverges from expected restoration point.
+- Layout-vs-scroll desync: view frame metrics look stable while scroll metrics continue changing.
+
 ## Log Reading Quick Guide
 
 MotionEyes output patterns:
@@ -90,6 +107,10 @@ AnimatedView()
             "targetFrame",
             properties: [.minX, .minY, .width, .height],
             in: .global
+        )
+        Trace.scrollGeometry(
+            "scrollMetrics",
+            properties: [.contentOffsetY, .visibleRectMinY, .visibleRectHeight]
         )
     }
 ```

@@ -12,6 +12,7 @@ It provides:
 - Configurable sampling FPS (default `15`)
 - Changed-only log emission
 - Geometry tracing (`minX`, `minY`, `width`, `height`, etc.)
+- Scroll geometry tracing (`contentOffset`, `visibleRect`, `contentSize`, etc.)
 - `Logger` output filterable by subsystem/category
 
 ## Installation
@@ -45,6 +46,17 @@ struct DemoView: View {
 }
 ```
 
+ScrollView-specific tracing:
+
+```swift
+ScrollView {
+    content
+}
+.motionTrace("Chat Scroll", fps: 24) {
+    Trace.scrollGeometry("scrollMetrics")
+}
+```
+
 ## API
 
 ```swift
@@ -58,7 +70,42 @@ public extension View {
         @MotionTraceBuilder _ metrics: () -> [MotionTraceMetric]
     ) -> some View
 }
+
+public enum Trace {
+    static func value<V: MotionTraceValueConvertible>(
+        _ propertyName: String,
+        _ value: V,
+        precision: Int = 3,
+        epsilon: Double = 0.0001
+    ) -> MotionTraceMetric
+
+    static func geometry(
+        _ name: String = "geometry",
+        properties: Set<MotionGeometryProperty> = [.minX, .minY, .width, .height],
+        in coordinateSpace: CoordinateSpace = .global,
+        precision: Int = 2,
+        epsilon: Double = 0.1
+    ) -> MotionTraceMetric
+
+    static func scrollGeometry(
+        _ name: String = "scrollGeometry",
+        properties: Set<MotionScrollGeometryProperty> = [
+            .contentOffsetX,
+            .contentOffsetY,
+            .visibleRectMinY,
+            .visibleRectHeight,
+        ],
+        precision: Int = 2,
+        epsilon: Double = 0.1
+    ) -> MotionTraceMetric
+}
 ```
+
+## Choosing Geometry APIs
+
+- Use `Trace.geometry` for view frame/layout debugging in a coordinate space.
+- Use `Trace.scrollGeometry` for scroll-container state such as content offset, visible rect, insets, and scrollable size.
+- It is valid to use both metrics in one trace when a bug combines layout and scrolling behavior.
 
 ## Logging
 
@@ -99,4 +146,5 @@ The app includes:
 - Opacity animation tracing
 - Offset/position tracing
 - Geometry frame tracing
+- Scroll geometry tracing
 - Shared controls for FPS, tracing enabled, animation enabled, and view label

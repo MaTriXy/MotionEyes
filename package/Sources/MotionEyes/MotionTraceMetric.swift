@@ -12,6 +12,7 @@ extension MotionTraceMetric {
     enum Kind {
         case value(ValueSpec)
         case geometry(GeometrySpec)
+        case scrollGeometry(ScrollGeometrySpec)
     }
 
     struct ValueSpec {
@@ -25,6 +26,13 @@ extension MotionTraceMetric {
         let name: String
         let properties: Set<MotionGeometryProperty>
         let coordinateSpace: CoordinateSpace
+        let precision: Int
+        let epsilon: Double
+    }
+
+    struct ScrollGeometrySpec {
+        let name: String
+        let properties: Set<MotionScrollGeometryProperty>
         let precision: Int
         let epsilon: Double
     }

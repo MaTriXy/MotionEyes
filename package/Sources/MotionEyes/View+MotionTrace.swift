@@ -72,6 +72,15 @@ private struct MotionTraceRuntimeOverlay: View {
         let epsilon: Double
     }
 
+    private struct ScrollGeometryProbeInput: Identifiable {
+        let id: String
+        let metricID: String
+        let metricName: String
+        let properties: Set<MotionScrollGeometryProperty>
+        let precision: Int
+        let epsilon: Double
+    }
+
     let viewName: String
     let fps: Int
     let engine: MotionTraceEngine
@@ -96,7 +105,7 @@ private struct MotionTraceRuntimeOverlay: View {
                         epsilon: spec.epsilon
                     )
                 }
-            case .geometry:
+            case .geometry, .scrollGeometry:
                 return []
             }
         }
@@ -105,7 +114,7 @@ private struct MotionTraceRuntimeOverlay: View {
     private var geometryProbes: [GeometryProbeInput] {
         metrics.enumerated().compactMap { index, metric in
             switch metric.kind {
-            case .value:
+            case .value, .scrollGeometry:
                 return nil
             case let .geometry(spec):
                 return GeometryProbeInput(
@@ -121,8 +130,26 @@ private struct MotionTraceRuntimeOverlay: View {
         }
     }
 
+    private var scrollGeometryProbes: [ScrollGeometryProbeInput] {
+        metrics.enumerated().compactMap { index, metric in
+            switch metric.kind {
+            case .value, .geometry:
+                return nil
+            case let .scrollGeometry(spec):
+                return ScrollGeometryProbeInput(
+                    id: "scroll-geometry-\(index)",
+                    metricID: "scroll-geometry-\(index)",
+                    metricName: spec.name,
+                    properties: spec.properties,
+                    precision: spec.precision,
+                    epsilon: spec.epsilon
+                )
+            }
+        }
+    }
+
     private var activeMetricIDs: [String] {
-        let ids = valueProbes.map(\.metricID) + geometryProbes.map(\.metricID)
+        let ids = valueProbes.map(\.metricID) + geometryProbes.map(\.metricID) + scrollGeometryProbes.map(\.metricID)
         return Array(Set(ids)).sorted()
     }
 
@@ -149,6 +176,18 @@ private struct MotionTraceRuntimeOverlay: View {
                         components[property.rawValue] = property.extract(from: frame)
                     }
 
+                    coordinator.recordGeometry(
+                        metricID: probe.metricID,
+                        metricName: probe.metricName,
+                        components: components,
+                        precision: probe.precision,
+                        epsilon: probe.epsilon
+                    )
+                }
+            }
+
+            ForEach(scrollGeometryProbes) { probe in
+                MotionScrollGeometryProbeView(properties: probe.properties) { components in
                     coordinator.recordGeometry(
                         metricID: probe.metricID,
                         metricName: probe.metricName,
@@ -231,6 +270,28 @@ private struct MotionGeometryProbeView: View {
                 proxy.frame(in: coordinateSpace.value)
             } action: { newFrame in
                 onFrameChange(newFrame)
+            }
+            .frame(width: 0, height: 0)
+    }
+}
+
+private struct MotionScrollGeometryProbeView: View {
+    let properties: Set<MotionScrollGeometryProperty>
+    let onComponentsChange: ([String: Double]) -> Void
+
+    var body: some View {
+        Color.clear
+            .onScrollGeometryChange(for: [String: Double].self) { geometry in
+                var components: [String: Double] = [:]
+                components.reserveCapacity(properties.count)
+
+                for property in properties.sorted(by: { $0.rawValue < $1.rawValue }) {
+                    components[property.rawValue] = property.extract(from: geometry)
+                }
+
+                return components
+            } action: { _, newComponents in
+                onComponentsChange(newComponents)
             }
             .frame(width: 0, height: 0)
     }

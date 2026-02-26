@@ -1,6 +1,6 @@
 ---
 name: motioneyes-animation-debug
-description: Diagnose and fix SwiftUI animation behavior by temporarily instrumenting views with MotionEyes, capturing console traces over time, and comparing motion data to user intent. Use when users report animation bugs such as wrong direction, premature fade, timing or easing mismatch, unexpected movement, missing movement, or incorrect relative movement between views. Prefer XcodeBuildMCP log capture first and fallback to CLI log streaming; remove only agent-added MotionEyes instrumentation after validation.
+description: Diagnose and fix SwiftUI animation and scroll behavior by temporarily instrumenting views with MotionEyes, capturing console traces over time, and comparing motion data to user intent. Use when users report bugs such as wrong direction, premature fade, timing or easing mismatch, unexpected movement, missing movement, incorrect relative movement between views, scroll jumps, scroll restoration drift, or content-offset desynchronization. Prefer XcodeBuildMCP log capture first and fallback to CLI log streaming; remove only agent-added MotionEyes instrumentation after validation.
 ---
 
 # MotionEyes Animation Debug
@@ -16,7 +16,7 @@ Follow this exact order:
 1. Confirm the complaint and expected behavior in measurable terms.
 2. Locate the target view and the state values that drive the animation.
 3. Ensure MotionEyes availability; if missing, auto-integrate the MotionEyes package into the app target before continuing.
-4. Add temporary `.motionTrace(...)` instrumentation with `Trace.value` and `Trace.geometry` metrics named after user intent.
+4. Add temporary `.motionTrace(...)` instrumentation with `Trace.value`, `Trace.geometry`, and (for scroll issues) `Trace.scrollGeometry` metrics named after user intent.
 5. Run the app and reproduce the issue.
 6. Capture logs with XcodeBuildMCP first; fallback to CLI log streaming if MCP is unavailable.
 7. Analyze how values evolve over time versus expected behavior.
@@ -30,6 +30,8 @@ Add instrumentation only to the minimum set of views needed to test the complain
 - Use stable, semantic trace names that match the user complaint.
 - Set the values to the same name as the property, so it's easier to identify.
 - Use geometry tracing when motion is relative to container or sibling layout.
+- Use scroll geometry tracing when the bug involves `ScrollView` offset, visible region, content size, insets, or restoration behavior.
+- Place `Trace.scrollGeometry` on the `ScrollView` container (or an immediate descendant bound to the same scroll context), not on unrelated overlays.
 
 Example template:
 
@@ -63,6 +65,20 @@ struct CardMotionExample: View {
                 }
             }
     }
+}
+```
+
+Scroll-focused template:
+
+```swift
+ScrollView {
+    content
+}
+.motionTrace("Chat Scroll", fps: 30) {
+    Trace.scrollGeometry(
+        "scrollMetrics",
+        properties: [.contentOffsetY, .visibleRectMinY, .visibleRectHeight]
+    )
 }
 ```
 
@@ -119,6 +135,7 @@ At the end of every run:
 - Fade timing bug: trace `opacity` and verify fade begins/ends when expected.
 - Wrong direction bug: trace Y-related value and confirm sign/trend match expected motion.
 - Relative motion bug: trace two objects and verify their positional relationship over time.
+- Scroll jump/restoration bug: trace `Trace.scrollGeometry` on the `ScrollView` and verify `contentOffset`/`visibleRect` progression through navigation and return paths.
 - No motion desired: if something is meant to remain static during transition.
 - Existing instrumentation safety: preserve user-authored MotionEyes traces.
 - MCP unavailable: use CLI log stream and continue analysis.

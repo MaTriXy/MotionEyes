@@ -114,4 +114,49 @@ final class MotionTraceCoordinatorTests: XCTestCase {
         XCTAssertTrue(lines.contains(where: { $0.contains("-- Start ") }))
         XCTAssertTrue(lines.contains(where: { $0.contains("-- End ") }))
     }
+
+    func testScrollGeometryLikePayloadEmitsMarkersAndValues() {
+        var lines: [String] = []
+        let logger = Logger(subsystem: "MotionEyesTests", category: "ScrollGeometry")
+
+        let coordinator = MotionTraceCoordinator(
+            logger: logger,
+            sink: { _, message in
+                lines.append(message)
+            }
+        )
+
+        coordinator.configure(viewName: "Chat Scroll", fps: 24, engine: .timer, logger: logger)
+
+        coordinator.recordGeometry(
+            metricID: "scroll-geometry-0",
+            metricName: "scrollMetrics",
+            components: [
+                "contentOffsetY": 0,
+                "visibleRectMinY": 0,
+            ],
+            precision: 2,
+            epsilon: 0.1
+        )
+        coordinator.processTick() // baseline
+
+        coordinator.recordGeometry(
+            metricID: "scroll-geometry-0",
+            metricName: "scrollMetrics",
+            components: [
+                "contentOffsetY": 14.5,
+                "visibleRectMinY": 14.5,
+            ],
+            precision: 2,
+            epsilon: 0.1
+        )
+        coordinator.processTick() // start + value
+        coordinator.processTick() // end
+
+        XCTAssertEqual(lines.count, 4)
+        XCTAssertTrue(lines[0].contains("contentOffsetY=0.00 visibleRectMinY=0.00"))
+        XCTAssertTrue(lines[1].contains("-- Start "))
+        XCTAssertTrue(lines[2].contains("contentOffsetY=14.50 visibleRectMinY=14.50"))
+        XCTAssertTrue(lines[3].contains("-- End "))
+    }
 }

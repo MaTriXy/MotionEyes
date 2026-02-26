@@ -52,6 +52,16 @@ private struct DemoRootView: View {
             .tabItem {
                 Label("Geometry", systemImage: "viewfinder")
             }
+
+            ScrollGeometryDemoView(
+                viewLabel: $viewLabel,
+                fps: $fps,
+                tracingEnabled: $tracingEnabled,
+                animateChanges: $animateChanges
+            )
+            .tabItem {
+                Label("Scroll", systemImage: "arrow.up.and.down.text.horizontal")
+            }
         }
     }
 }
@@ -280,6 +290,47 @@ private struct GeometryDemoView: View {
             }
         } else {
             updates()
+        }
+    }
+}
+
+private struct ScrollGeometryDemoView: View {
+    @Binding var viewLabel: String
+    @Binding var fps: Int
+    @Binding var tracingEnabled: Bool
+    @Binding var animateChanges: Bool
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                DemoControls(
+                    viewLabel: $viewLabel,
+                    fps: $fps,
+                    tracingEnabled: $tracingEnabled,
+                    animateChanges: $animateChanges
+                )
+
+                Text("Scroll to generate Trace.scrollGeometry samples.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                ForEach(0..<60, id: \.self) { index in
+                    HStack {
+                        Text("Row \(index)")
+                            .font(.body.monospacedDigit())
+                        Spacer()
+                        Text("Offset probe")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding()
+                    .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            .padding()
+        }
+        .motionTrace(viewLabel, fps: fps, enabled: tracingEnabled) {
+            Trace.scrollGeometry("scrollMetrics")
         }
     }
 }
