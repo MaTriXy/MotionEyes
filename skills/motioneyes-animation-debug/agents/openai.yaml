@@ -1,0 +1,11 @@
+interface:
+  display_name: "MotionEyes Animation Debug"
+  short_description: "Debug SwiftUI animation behavior with MotionEyes logs"
+  default_prompt: "Use $motioneyes-animation-debug to diagnose a SwiftUI animation that behaves incorrectly."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "xcodebuildmcp"
+      description: "Preferred simulator run and log-capture backend for this skill."
+policy:
+  allow_implicit_invocation: true
