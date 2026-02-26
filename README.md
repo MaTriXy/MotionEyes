@@ -2,9 +2,6 @@
 
 ![MotionEyes banner](https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/motioneyes-banner.jpg)
 
-
-![MotionEyes banner](https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/motioneyes-banner.jpg)
-
 MotionEyes is an agent-first SwiftUI motion observability system.
 
 It combines:
