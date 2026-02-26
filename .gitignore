@@ -1,0 +1,17 @@
+.DS_Store
+.build/
+.swiftpm/
+
+# Xcode
+DerivedData/
+*.xcuserstate
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# Xcode user data
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# SwiftPM local config
+Package.resolved
