@@ -7,12 +7,12 @@
     "email": "edwardsanchez@mac.com"
   },
   "metadata": {
-    "description": "Agent skill for SwiftUI animation and scroll debugging using MotionEyes traces."
+    "description": "Agent skills for SwiftUI animation/scroll debugging and visual frame analysis using MotionEyes traces and CV."
   },
   "plugins": [
     {
       "name": "motioneyes",
-      "description": "SwiftUI motion observability and debugging workflow using MotionEyes runtime traces.",
+      "description": "SwiftUI motion observability and visual frame analysis using MotionEyes runtime traces and CV.",
       "repository": "https://github.com/edwardsanchez/MotionEyes",
       "version": "1.0.0",
       "author": {

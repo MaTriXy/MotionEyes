@@ -1,0 +1,4 @@
+interface:
+  display_name: "MotionEyes Visual Analysis"
+  short_description: "Analyze UI motion from frames using CV + vision."
+  default_prompt: "Analyze the provided UI frames or capture a short sequence, then output annotated images plus a JSON summary of motion (translation, scale, rotation, opacity, color) and changed regions."

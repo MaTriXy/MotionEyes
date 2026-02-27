@@ -8,7 +8,8 @@ MotionEyes is an agent-first SwiftUI motion observability system.
 
 MotionEyes combines:
 - `package/`: runtime tracing primitives that emit motion data over time (`.motionTrace`, `Trace.value`, `Trace.geometry`, `Trace.scrollGeometry`)
-- `skill/`: an agent workflow (`motioneyes-animation-debug`) that installs or integrates the package, adds focused traces, captures logs, and validates behavior against intent
+- `skill/motioneyes-animation-debug`: installs or integrates the package, adds focused traces, captures logs, and validates behavior against intent
+- `skill/motioneyes-visual-analysis`: analyzes frame sequences with computer vision and produces annotated images plus JSON summaries
 
 The goal is to let agents read real motion, geometry, and scroll values from logs instead of guessing from code.
 
@@ -52,10 +53,15 @@ xcrun simctl spawn booted log stream \
 
 - `.transition` visual behavior is not directly observable when no measurable underlying value is exposed.
 
+## Skills
+
+See `skill/SKILLS.md` for guidance on when to use each skill.
+
 ### Repository Layout
 
 - `package/`: MotionEyes Swift package
 - `skill/motioneyes-animation-debug/`: MotionEyes agent skill
+- `skill/motioneyes-visual-analysis/`: Frame-based visual analysis skill
 - `skill/motioneyes-animation-debug/SKILL.md`: Skill workflow definition
 
 ### Package Quick Start
