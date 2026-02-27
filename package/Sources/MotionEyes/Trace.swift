@@ -29,6 +29,7 @@ public enum Trace {
     ///   - source: Layout (`.layout`) or visible presentation (`.presentation`) geometry.
     ///   - precision: Decimal precision for logged values.
     ///   - epsilon: Minimum delta required before values are emitted as changed.
+#if os(watchOS)
     public static func geometry(
         _ name: String = "geometry",
         properties: Set<MotionGeometryProperty> = [.minX, .minY, .width, .height],
@@ -36,6 +37,43 @@ public enum Trace {
         source: MotionGeometrySource = .layout,
         precision: Int = 2,
         epsilon: Double = 0.1
+    ) -> MotionTraceMetric {
+        geometryMetric(
+            name: name,
+            properties: properties,
+            space: space,
+            source: source,
+            precision: precision,
+            epsilon: epsilon
+        )
+    }
+#else
+    public static func geometry(
+        _ name: String = "geometry",
+        properties: Set<MotionGeometryProperty> = [.minX, .minY, .width, .height],
+        space: MotionGeometrySpace = .screen,
+        source: MotionGeometrySource = .presentation,
+        precision: Int = 2,
+        epsilon: Double = 0.1
+    ) -> MotionTraceMetric {
+        geometryMetric(
+            name: name,
+            properties: properties,
+            space: space,
+            source: source,
+            precision: precision,
+            epsilon: epsilon
+        )
+    }
+#endif
+
+    private static func geometryMetric(
+        name: String,
+        properties: Set<MotionGeometryProperty>,
+        space: MotionGeometrySpace,
+        source: MotionGeometrySource,
+        precision: Int,
+        epsilon: Double
     ) -> MotionTraceMetric {
         MotionTraceMetric(
             kind: .geometry(

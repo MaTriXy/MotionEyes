@@ -48,18 +48,33 @@ Follow this exact order:
 8. Implement a fix, rerun, and verify the motion now matches intent.
 9. Remove only agent-added MotionEyes imports, modifiers, and trace metrics from this run; never remove user-authored pre-existing MotionEyes code.
 
+## Intent Mapping (Screen vs Layout vs Local)
+
+Choose the geometry mode that matches what the user actually cares about.
+
+- **User-visible/on-screen motion** (phrases like "did it move?", "what the user sees", "slide on screen"):
+  - `Trace.geometry(..., space: .screen, source: .presentation)`
+- **Layout relationships/spacing** (phrases like "aligned", "spacing", "relative to container", "stays in the same stack position"):
+  - `Trace.geometry(..., space: .swiftUI(.global), source: .layout)`
+- **Local container relationships** (phrases like "within this card", "inside this stack", "relative to parent bounds"):
+  - `Trace.geometry(..., space: .swiftUI(.local), source: .layout)` or a named coordinate space
+
+If you are unsure, start with on-screen motion and add layout geometry only if you need relationships.
+
 ## Quick Decision Tree
 
 1. If you need to observe a single value changing over time, start with `Trace.value`.
-2. If the issue involves layout relationships or sibling positioning, add `Trace.geometry` with `space: .swiftUI(.global), source: .layout`.
-3. If visible movement on screen differs from layout values, add a second `Trace.geometry` with `space: .screen, source: .presentation`.
-4. If the bug involves scrolling or restoration, use `Trace.scrollGeometry` on the `ScrollView` container.
+2. If the user cares about visible on-screen motion, start with `Trace.geometry` using `space: .screen, source: .presentation`.
+3. If the issue involves layout relationships or spacing, add `Trace.geometry` with `space: .swiftUI(.global), source: .layout` (or `.local` for local container relationships).
+4. If the first geometry trace is flat but the user sees motion, add the complementary geometry mode (layout vs presentation) and compare.
+5. If the bug involves scrolling or restoration, use `Trace.scrollGeometry` on the `ScrollView` container.
 
 ## Triage-First Playbook
 
 - Fade or visibility mismatch: `Trace.value("opacity", opacity)`.
 - Offset or translation issues: `Trace.value("offset", CGPoint(x: offset.width, y: offset.height))`.
-- Position drift between elements: `Trace.geometry` for both views in the same space.
+- Missing or disputed on-screen motion: `Trace.geometry` in `.screen + .presentation` (add layout if needed).
+- Position drift between elements: `Trace.geometry` for both views in the same space that matches intent.
 - Timing mismatch: trace the driving state with `Trace.value` plus one geometry metric.
 - Scroll jumps or restoration drift: `Trace.scrollGeometry` with `contentOffset` and `visibleRect` metrics.
 - Unexpected motion when something should remain still: `Trace.geometry` in `.screen + .presentation`.
@@ -70,13 +85,17 @@ Add instrumentation only to the minimum set of views needed to test the complain
 
 - Use stable, semantic trace names that match the user complaint.
 - Set the values to the same name as the property, so it is easier to identify.
-- Use geometry tracing when motion is relative to container or sibling layout.
+- Default to on-screen motion (`.screen + .presentation`) when the user is describing what they see.
+- Use layout geometry when the issue is about spacing, alignment, or container/sibling relationships.
 - Use scroll geometry tracing when the bug involves `ScrollView` offset, visible region, content size, insets, or restoration behavior.
 - Place `Trace.scrollGeometry` on the `ScrollView` container or an immediate descendant bound to the same scroll context.
+- If a geometry trace is flat but the user reports motion, add the complementary geometry mode and compare.
+- Scroll caveat: layout frames can stay stable while scroll geometry or presentation geometry changes.
 
 Choose geometry mode based on intent:
 
 - Layout relationship in SwiftUI coordinates: `space: .swiftUI(.global), source: .layout`
+- Local container relationship: `space: .swiftUI(.local), source: .layout` (or a named coordinate space)
 - Window-relative layout motion: `space: .window, source: .layout`
 - Physical screen-visible motion: `space: .screen, source: .presentation`
 
@@ -102,8 +121,8 @@ struct CardMotionExample: View {
                 Trace.geometry(
                     "cardFrame",
                     properties: [.minX, .minY, .width, .height],
-                    space: .swiftUI(.global),
-                    source: .layout
+                    space: .screen,
+                    source: .presentation
                 )
             }
             .onTapGesture {

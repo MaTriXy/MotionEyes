@@ -12,14 +12,24 @@ final class TraceTests: XCTestCase {
 
         XCTAssertEqual(spec.name, "geometry")
         XCTAssertEqual(spec.properties, [.minX, .minY, .width, .height])
-        XCTAssertEqual(spec.source, .layout)
         XCTAssertEqual(spec.precision, 2)
         XCTAssertEqual(spec.epsilon, 0.1)
+
+#if os(watchOS)
+        XCTAssertEqual(spec.source, .layout)
 
         guard case .swiftUI(.global) = spec.space else {
             XCTFail("Expected default geometry space to be .swiftUI(.global)")
             return
         }
+#else
+        XCTAssertEqual(spec.source, .presentation)
+
+        guard case .screen = spec.space else {
+            XCTFail("Expected default geometry space to be .screen")
+            return
+        }
+#endif
     }
 
     func testGeometryAppliesCustomValuesAndClamps() {

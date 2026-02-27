@@ -87,8 +87,8 @@ public enum Trace {
     static func geometry(
         _ name: String = "geometry",
         properties: Set<MotionGeometryProperty> = [.minX, .minY, .width, .height],
-        space: MotionGeometrySpace = .swiftUI(.global),
-        source: MotionGeometrySource = .layout,
+        space: MotionGeometrySpace = .screen,
+        source: MotionGeometrySource = .presentation,
         precision: Int = 2,
         epsilon: Double = 0.1
     ) -> MotionTraceMetric
@@ -107,8 +107,11 @@ public enum Trace {
 }
 ```
 
+Note: On watchOS, the `Trace.geometry` defaults fall back to `space: .swiftUI(.global)` and `source: .layout` because screen/presentation geometry is unavailable.
+
 ## Choosing Geometry APIs
 
+- `Trace.geometry` defaults to `space: .screen` and `source: .presentation` on non-watchOS platforms for user-visible motion. Use explicit layout geometry when you care about SwiftUI layout relationships.
 - Use `Trace.geometry(..., space: .swiftUI(...), source: .layout)` for SwiftUI layout frame debugging.
 - Use `Trace.geometry(..., space: .window, source: .layout)` for model/layout movement relative to the window.
 - Use `Trace.geometry(..., space: .screen, source: .presentation)` for visible on-screen movement during animation.

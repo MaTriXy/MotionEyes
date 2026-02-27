@@ -24,6 +24,16 @@ Pick metrics that represent the user complaint directly.
 
 Prefer one to three focused metrics first; expand only if root cause remains unclear.
 
+## Intent Mapping
+
+Match geometry mode to what the user cares about:
+
+- User-visible/on-screen motion: `Trace.geometry(..., space: .screen, source: .presentation)`
+- Layout relationships/spacing: `Trace.geometry(..., space: .swiftUI(.global), source: .layout)`
+- Local container relationships: `Trace.geometry(..., space: .swiftUI(.local), source: .layout)` or a named coordinate space
+
+If the first geometry trace is flat but motion is visible, add the complementary geometry mode and compare.
+
 ## Direction and Coordinate Conventions
 
 iOS coordinate space conventions:
@@ -71,12 +81,14 @@ Common mismatch signatures:
 
 - `space: .swiftUI(...)` + `source: .layout`
   - SwiftUI layout coordinates (good for container/sibling relationships).
+- `space: .swiftUI(.local)` + `source: .layout`
+  - Local container relationships within a view or named coordinate space.
 - `space: .window` + `source: .layout`
   - Layout movement relative to window edges.
 - `space: .screen` + `source: .presentation`
   - Visible rendered movement relative to physical screen.
 
-If visual wiggle is present while SwiftUI global layout is flat, add a second metric with `.screen + .presentation`.
+If visual wiggle is present while SwiftUI layout is flat, add a second metric with `.screen + .presentation`.
 
 ## Scroll Geometry Interpretation
 
@@ -91,6 +103,8 @@ Common mismatch signatures:
 - Offset discontinuity: sudden `contentOffsetY` jump after return.
 - Visible rect mismatch: `visibleRectMinY` diverges from expected restoration point.
 - Layout-vs-scroll desync: view frame metrics look stable while scroll metrics continue changing.
+
+Scroll caveat: views inside a `ScrollView` can appear to move while layout frames remain stable. Use `Trace.scrollGeometry` and/or presentation geometry to capture visible motion.
 
 ## Log Reading Quick Guide
 
