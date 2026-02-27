@@ -29,9 +29,14 @@ Add instrumentation only to the minimum set of views needed to test the complain
 
 - Use stable, semantic trace names that match the user complaint.
 - Set the values to the same name as the property, so it's easier to identify.
-- Use geometry tracing when motion is relative to container or sibling layout.
+- Use geometry tracing when motion is relative to container or sibling layout, or when checking true on-screen presentation movement.
 - Use scroll geometry tracing when the bug involves `ScrollView` offset, visible region, content size, insets, or restoration behavior.
 - Place `Trace.scrollGeometry` on the `ScrollView` container (or an immediate descendant bound to the same scroll context), not on unrelated overlays.
+
+Choose geometry mode based on intent:
+- Layout relationship in SwiftUI coordinates: `space: .swiftUI(.global), source: .layout`
+- Window-relative layout motion: `space: .window, source: .layout`
+- Physical screen-visible motion (including presentation wiggle): `space: .screen, source: .presentation`
 
 Example template:
 
@@ -55,7 +60,8 @@ struct CardMotionExample: View {
                 Trace.geometry(
                     "cardFrame",
                     properties: [.minX, .minY, .width, .height],
-                    in: .global
+                    space: .swiftUI(.global),
+                    source: .layout
                 )
             }
             .onTapGesture {

@@ -37,8 +37,13 @@ final class MotionTraceCoordinator {
         self.fps = MotionTraceFPS.clamp(fps)
         self.engine = engine
         self.logger = logger
+        let shouldUseInfoLogs = ProcessInfo.processInfo.arguments.contains("--motioneyes-info-logs")
         self.sink = sink ?? { logger, message in
-            logger.debug("\(message, privacy: .public)")
+            if shouldUseInfoLogs {
+                logger.info("\(message, privacy: .public)")
+            } else {
+                logger.debug("\(message, privacy: .public)")
+            }
         }
         self.sampler = MotionTraceSamplerFactory.make(engine: engine, fps: fps)
 

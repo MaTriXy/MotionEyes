@@ -25,7 +25,8 @@ extension MotionTraceMetric {
     struct GeometrySpec {
         let name: String
         let properties: Set<MotionGeometryProperty>
-        let coordinateSpace: CoordinateSpace
+        let space: MotionGeometrySpace
+        let source: MotionGeometrySource
         let precision: Int
         let epsilon: Double
     }

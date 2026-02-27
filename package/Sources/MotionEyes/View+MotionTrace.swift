@@ -1,11 +1,30 @@
 import OSLog
 @preconcurrency import SwiftUI
 
+#if canImport(AppKit)
+import AppKit
+#endif
+#if canImport(QuartzCore)
+import QuartzCore
+#endif
+#if canImport(UIKit)
+import UIKit
+#endif
+
+private struct UncheckedGeometrySpace: @unchecked Sendable {
+    let value: MotionGeometrySpace
+}
+
 private struct UncheckedCoordinateSpace: @unchecked Sendable {
     let value: CoordinateSpace
 }
 
 public extension View {
+    /// Attaches runtime motion tracing to the receiving view.
+    ///
+    /// Add one or more metrics using the `metrics` builder.
+    /// For geometry tracing, use ``Trace/geometry(_:properties:space:source:precision:epsilon:)``
+    /// to choose between layout geometry and presentation geometry.
     @ViewBuilder
     func motionTrace(
         _ viewName: String,
@@ -67,7 +86,8 @@ private struct MotionTraceRuntimeOverlay: View {
         let metricID: String
         let metricName: String
         let properties: Set<MotionGeometryProperty>
-        let coordinateSpace: UncheckedCoordinateSpace
+        let space: UncheckedGeometrySpace
+        let source: MotionGeometrySource
         let precision: Int
         let epsilon: Double
     }
@@ -122,7 +142,8 @@ private struct MotionTraceRuntimeOverlay: View {
                     metricID: "geometry-\(index)",
                     metricName: spec.name,
                     properties: spec.properties,
-                    coordinateSpace: UncheckedCoordinateSpace(value: spec.coordinateSpace),
+                    space: UncheckedGeometrySpace(value: spec.space),
+                    source: spec.source,
                     precision: spec.precision,
                     epsilon: spec.epsilon
                 )
@@ -169,7 +190,7 @@ private struct MotionTraceRuntimeOverlay: View {
             }
 
             ForEach(geometryProbes) { probe in
-                MotionGeometryProbeView(coordinateSpace: probe.coordinateSpace) { frame in
+                MotionGeometryProbeView(space: probe.space, source: probe.source) { frame in
                     var components: [String: Double] = [:]
 
                     for property in probe.properties.sorted(by: { $0.rawValue < $1.rawValue }) {
@@ -261,6 +282,42 @@ private struct MotionTraceSampleEffect: GeometryEffect {
 }
 
 private struct MotionGeometryProbeView: View {
+    let space: UncheckedGeometrySpace
+    let source: MotionGeometrySource
+    let onFrameChange: (CGRect) -> Void
+
+    @ViewBuilder
+    var body: some View {
+        switch source {
+        case .layout:
+            switch space.value {
+            case let .swiftUI(coordinateSpace):
+                MotionSwiftUILayoutGeometryProbeView(
+                    coordinateSpace: UncheckedCoordinateSpace(value: coordinateSpace),
+                    onFrameChange: onFrameChange
+                )
+            #if !os(watchOS)
+            case .window, .screen:
+                MotionPlatformGeometryProbeView(
+                    space: space.value,
+                    source: source,
+                    onFrameChange: onFrameChange
+                )
+            #endif
+            }
+        #if !os(watchOS)
+        case .presentation:
+            MotionPlatformGeometryProbeView(
+                space: space.value,
+                source: source,
+                onFrameChange: onFrameChange
+            )
+        #endif
+        }
+    }
+}
+
+private struct MotionSwiftUILayoutGeometryProbeView: View {
     let coordinateSpace: UncheckedCoordinateSpace
     let onFrameChange: (CGRect) -> Void
 
@@ -274,6 +331,314 @@ private struct MotionGeometryProbeView: View {
             .frame(width: 0, height: 0)
     }
 }
+
+#if !os(watchOS)
+private struct MotionPlatformGeometryProbeView: View {
+    let space: MotionGeometrySpace
+    let source: MotionGeometrySource
+    let onFrameChange: (CGRect) -> Void
+
+    @ViewBuilder
+    var body: some View {
+        #if canImport(UIKit) && (os(iOS) || os(tvOS) || os(visionOS))
+        MotionUIKitGeometryProbeRepresentable(
+            space: space,
+            source: source,
+            onFrameChange: onFrameChange
+        )
+        .frame(width: 0, height: 0)
+        #elseif canImport(AppKit) && os(macOS)
+        MotionAppKitGeometryProbeRepresentable(
+            space: space,
+            source: source,
+            onFrameChange: onFrameChange
+        )
+        .frame(width: 0, height: 0)
+        #else
+        Color.clear.frame(width: 0, height: 0)
+        #endif
+    }
+}
+#endif
+
+#if canImport(UIKit) && (os(iOS) || os(tvOS) || os(visionOS))
+private struct MotionUIKitGeometryProbeRepresentable: UIViewRepresentable {
+    let space: MotionGeometrySpace
+    let source: MotionGeometrySource
+    let onFrameChange: (CGRect) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(
+            space: space,
+            source: source,
+            onFrameChange: onFrameChange
+        )
+    }
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.backgroundColor = .clear
+        view.isUserInteractionEnabled = false
+        context.coordinator.attach(to: view)
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        context.coordinator.update(
+            space: space,
+            source: source,
+            onFrameChange: onFrameChange
+        )
+        context.coordinator.attach(to: uiView)
+    }
+
+    static func dismantleUIView(_ uiView: UIView, coordinator: Coordinator) {
+        coordinator.detach()
+    }
+
+    @MainActor
+    final class Coordinator: NSObject {
+        private var space: MotionGeometrySpace
+        private var source: MotionGeometrySource
+        private var onFrameChange: (CGRect) -> Void
+
+        private weak var view: UIView?
+        private var displayLink: CADisplayLink?
+
+        init(
+            space: MotionGeometrySpace,
+            source: MotionGeometrySource,
+            onFrameChange: @escaping (CGRect) -> Void
+        ) {
+            self.space = space
+            self.source = source
+            self.onFrameChange = onFrameChange
+            super.init()
+        }
+
+        func attach(to view: UIView) {
+            self.view = view
+            startSamplingIfNeeded()
+            sampleFrame()
+        }
+
+        func update(
+            space: MotionGeometrySpace,
+            source: MotionGeometrySource,
+            onFrameChange: @escaping (CGRect) -> Void
+        ) {
+            self.space = space
+            self.source = source
+            self.onFrameChange = onFrameChange
+            sampleFrame()
+        }
+
+        func detach() {
+            displayLink?.invalidate()
+            displayLink = nil
+            view = nil
+        }
+
+        private func startSamplingIfNeeded() {
+            guard displayLink == nil else { return }
+            let displayLink = CADisplayLink(target: self, selector: #selector(step))
+            self.displayLink = displayLink
+            displayLink.add(to: .main, forMode: .common)
+        }
+
+        @objc
+        private func step() {
+            sampleFrame()
+        }
+
+        private func sampleFrame() {
+            guard let view, let window = view.window else {
+                return
+            }
+
+            let layoutInWindow = view.convert(view.bounds, to: window)
+            let presentationInWindow = Self.presentationFrameInWindow(for: view, window: window)
+            let selectedInWindow = MotionGeometryFrameSelector.selectInWindow(
+                source: source,
+                candidates: MotionGeometryFrameCandidates(
+                    layoutInWindow: layoutInWindow,
+                    presentationInWindow: presentationInWindow
+                )
+            )
+
+            let resolvedFrame: CGRect
+            switch space {
+            case .swiftUI:
+                resolvedFrame = selectedInWindow
+            case .window:
+                resolvedFrame = selectedInWindow
+            case .screen:
+                resolvedFrame = window.convert(selectedInWindow, to: window.screen.coordinateSpace)
+            }
+
+            onFrameChange(resolvedFrame)
+        }
+
+        private static func presentationFrameInWindow(
+            for view: UIView,
+            window: UIWindow
+        ) -> CGRect? {
+            guard let presentationLayer = view.layer.presentation() else {
+                return nil
+            }
+
+            if let superlayer = presentationLayer.superlayer {
+                return superlayer.convert(presentationLayer.frame, to: window.layer)
+            }
+
+            return view.convert(view.bounds, to: window)
+        }
+    }
+}
+#endif
+
+#if canImport(AppKit) && os(macOS)
+private struct MotionAppKitGeometryProbeRepresentable: NSViewRepresentable {
+    let space: MotionGeometrySpace
+    let source: MotionGeometrySource
+    let onFrameChange: (CGRect) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(
+            space: space,
+            source: source,
+            onFrameChange: onFrameChange
+        )
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.wantsLayer = true
+        context.coordinator.attach(to: view)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.update(
+            space: space,
+            source: source,
+            onFrameChange: onFrameChange
+        )
+        context.coordinator.attach(to: nsView)
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        coordinator.detach()
+    }
+
+    @MainActor
+    final class Coordinator: NSObject {
+        private var space: MotionGeometrySpace
+        private var source: MotionGeometrySource
+        private var onFrameChange: (CGRect) -> Void
+
+        private weak var view: NSView?
+        private var timer: Timer?
+
+        init(
+            space: MotionGeometrySpace,
+            source: MotionGeometrySource,
+            onFrameChange: @escaping (CGRect) -> Void
+        ) {
+            self.space = space
+            self.source = source
+            self.onFrameChange = onFrameChange
+            super.init()
+        }
+
+        func attach(to view: NSView) {
+            self.view = view
+            startSamplingIfNeeded()
+            sampleFrame()
+        }
+
+        func update(
+            space: MotionGeometrySpace,
+            source: MotionGeometrySource,
+            onFrameChange: @escaping (CGRect) -> Void
+        ) {
+            self.space = space
+            self.source = source
+            self.onFrameChange = onFrameChange
+            sampleFrame()
+        }
+
+        func detach() {
+            timer?.invalidate()
+            timer = nil
+            view = nil
+        }
+
+        private func startSamplingIfNeeded() {
+            guard timer == nil else { return }
+
+            let timer = Timer(
+                timeInterval: 1.0 / 60.0,
+                target: self,
+                selector: #selector(step),
+                userInfo: nil,
+                repeats: true
+            )
+            self.timer = timer
+            RunLoop.main.add(timer, forMode: .common)
+        }
+
+        @objc
+        private func step() {
+            sampleFrame()
+        }
+
+        private func sampleFrame() {
+            guard let view, let window = view.window else {
+                return
+            }
+
+            let layoutInWindow = view.convert(view.bounds, to: nil)
+            let presentationInWindow = Self.presentationFrameInWindow(for: view)
+            let selectedInWindow = MotionGeometryFrameSelector.selectInWindow(
+                source: source,
+                candidates: MotionGeometryFrameCandidates(
+                    layoutInWindow: layoutInWindow,
+                    presentationInWindow: presentationInWindow
+                )
+            )
+
+            let resolvedFrame: CGRect
+            switch space {
+            case .swiftUI:
+                resolvedFrame = selectedInWindow
+            case .window:
+                resolvedFrame = selectedInWindow
+            case .screen:
+                resolvedFrame = window.convertToScreen(selectedInWindow)
+            }
+
+            onFrameChange(resolvedFrame)
+        }
+
+        private static func presentationFrameInWindow(for view: NSView) -> CGRect? {
+            guard
+                let presentationLayer = view.layer?.presentation(),
+                let superview = view.superview
+            else {
+                return nil
+            }
+
+            let originInSuperview = CGPoint(
+                x: presentationLayer.frame.minX,
+                y: presentationLayer.frame.minY
+            )
+            let originInWindow = superview.convert(originInSuperview, to: nil)
+            return CGRect(origin: originInWindow, size: presentationLayer.frame.size)
+        }
+    }
+}
+#endif
 
 private struct MotionScrollGeometryProbeView: View {
     let properties: Set<MotionScrollGeometryProperty>

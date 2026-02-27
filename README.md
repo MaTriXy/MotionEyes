@@ -43,6 +43,17 @@ The skill orchestrates debugging end-to-end. The package provides the instrument
 - Catch easing/path issues such as overshoot or reversal when smooth one-way motion is expected.
 - Diagnose scroll jumps, failed restoration, and content-offset desynchronization.
 
+## Geometry Modes
+
+`Trace.geometry` now separates:
+- `space`: where coordinates are measured (`.swiftUI(...)`, `.window`, `.screen`)
+- `source`: what frame is sampled (`.layout` vs `.presentation`)
+
+Practical mapping:
+- Layout-relative debugging: `space: .swiftUI(.global), source: .layout`
+- Window-relative debugging: `space: .window, source: .layout`
+- True visible on-screen movement: `space: .screen, source: .presentation`
+
 ## Limitations
 
 - `.transition` visual behavior is not directly observable when no measurable underlying value is exposed.

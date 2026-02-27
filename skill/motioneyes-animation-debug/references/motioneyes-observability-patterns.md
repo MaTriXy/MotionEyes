@@ -15,7 +15,9 @@ Pick metrics that represent the user complaint directly.
   - `Trace.value("offset", CGPoint(x: offset.width, y: offset.height))`
   - `Trace.value("position", CGPoint(x: position.x, y: position.y))`
 - Layout/frame-driven issues:
-  - `Trace.geometry("frame", properties: [.minX, .minY, .width, .height], in: .global)`
+  - `Trace.geometry("frame", properties: [.minX, .minY, .width, .height], space: .swiftUI(.global), source: .layout)`
+- Visible on-screen movement issues:
+  - `Trace.geometry("frameOnScreen", properties: [.minY], space: .screen, source: .presentation)`
 - Scroll behavior issues:
   - `Trace.scrollGeometry("scrollMetrics")`
   - `Trace.scrollGeometry("scrollMetrics", properties: [.contentOffsetY, .visibleRectMinY, .visibleRectHeight])`
@@ -63,6 +65,19 @@ Common mismatch signatures:
 - Delayed `Start`: lagging follower.
 - Early `End`: follower stops too soon.
 
+## Geometry Space and Source
+
+`Trace.geometry` separates coordinate target from frame source:
+
+- `space: .swiftUI(...)` + `source: .layout`
+  - SwiftUI layout coordinates (good for container/sibling relationships).
+- `space: .window` + `source: .layout`
+  - Layout movement relative to window edges.
+- `space: .screen` + `source: .presentation`
+  - Visible rendered movement relative to physical screen.
+
+If visual wiggle is present while SwiftUI global layout is flat, add a second metric with `.screen + .presentation`.
+
 ## Scroll Geometry Interpretation
 
 For scroll jump, drift, or restoration issues:
@@ -106,7 +121,14 @@ AnimatedView()
         Trace.geometry(
             "targetFrame",
             properties: [.minX, .minY, .width, .height],
-            in: .global
+            space: .swiftUI(.global),
+            source: .layout
+        )
+        Trace.geometry(
+            "targetFrameOnScreen",
+            properties: [.minY, .height],
+            space: .screen,
+            source: .presentation
         )
         Trace.scrollGeometry(
             "scrollMetrics",

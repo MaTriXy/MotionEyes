@@ -35,7 +35,12 @@ struct DemoView: View {
             .opacity(opacity)
             .motionTrace("Input Field View", fps: 15) {
                 Trace.value("opacity", opacity)
-                Trace.geometry("frame", properties: [.minX, .minY, .width, .height])
+                Trace.geometry(
+                    "frame",
+                    properties: [.minX, .minY, .width, .height],
+                    space: .swiftUI(.global),
+                    source: .layout
+                )
             }
             .onTapGesture {
                 withAnimation(.easeInOut(duration: 1.0)) {
@@ -82,7 +87,8 @@ public enum Trace {
     static func geometry(
         _ name: String = "geometry",
         properties: Set<MotionGeometryProperty> = [.minX, .minY, .width, .height],
-        in coordinateSpace: CoordinateSpace = .global,
+        space: MotionGeometrySpace = .swiftUI(.global),
+        source: MotionGeometrySource = .layout,
         precision: Int = 2,
         epsilon: Double = 0.1
     ) -> MotionTraceMetric
@@ -103,9 +109,21 @@ public enum Trace {
 
 ## Choosing Geometry APIs
 
-- Use `Trace.geometry` for view frame/layout debugging in a coordinate space.
+- Use `Trace.geometry(..., space: .swiftUI(...), source: .layout)` for SwiftUI layout frame debugging.
+- Use `Trace.geometry(..., space: .window, source: .layout)` for model/layout movement relative to the window.
+- Use `Trace.geometry(..., space: .screen, source: .presentation)` for visible on-screen movement during animation.
 - Use `Trace.scrollGeometry` for scroll-container state such as content offset, visible rect, insets, and scrollable size.
 - It is valid to use both metrics in one trace when a bug combines layout and scrolling behavior.
+
+### Geometry Mode Reference
+
+| Goal | Recommended Metric |
+| --- | --- |
+| Compare sibling/container layout relationships | `Trace.geometry("frame", space: .swiftUI(.global), source: .layout)` |
+| Detect movement relative to app window | `Trace.geometry("frame", space: .window, source: .layout)` |
+| Detect visible movement relative to physical screen | `Trace.geometry("frame", space: .screen, source: .presentation)` |
+
+Note: `space: .swiftUI(...)` reports SwiftUI layout coordinates, which can remain stable while presentation-layer motion is still visible.
 
 ## Logging
 

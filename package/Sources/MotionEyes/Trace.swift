@@ -1,6 +1,7 @@
 import SwiftUI
 
 public enum Trace {
+    /// Traces a scalar or structured value over time.
     public static func value<V: MotionTraceValueConvertible>(
         _ propertyName: String,
         _ value: V,
@@ -19,10 +20,20 @@ public enum Trace {
         )
     }
 
+    /// Traces view geometry in a selected coordinate `space` and `source`.
+    ///
+    /// - Parameters:
+    ///   - name: Metric label used in log output.
+    ///   - properties: Geometry components to emit (for example, `minY`, `height`).
+    ///   - space: Coordinate target for emitted values.
+    ///   - source: Layout (`.layout`) or visible presentation (`.presentation`) geometry.
+    ///   - precision: Decimal precision for logged values.
+    ///   - epsilon: Minimum delta required before values are emitted as changed.
     public static func geometry(
         _ name: String = "geometry",
         properties: Set<MotionGeometryProperty> = [.minX, .minY, .width, .height],
-        in coordinateSpace: CoordinateSpace = .global,
+        space: MotionGeometrySpace = .swiftUI(.global),
+        source: MotionGeometrySource = .layout,
         precision: Int = 2,
         epsilon: Double = 0.1
     ) -> MotionTraceMetric {
@@ -31,7 +42,8 @@ public enum Trace {
                 .init(
                     name: name,
                     properties: properties,
-                    coordinateSpace: coordinateSpace,
+                    space: space,
+                    source: source,
                     precision: max(0, precision),
                     epsilon: max(0, epsilon)
                 )
@@ -39,6 +51,7 @@ public enum Trace {
         )
     }
 
+    /// Traces `ScrollView` runtime geometry values (offset, visible rect, insets, size).
     public static func scrollGeometry(
         _ name: String = "scrollGeometry",
         properties: Set<MotionScrollGeometryProperty> = [
