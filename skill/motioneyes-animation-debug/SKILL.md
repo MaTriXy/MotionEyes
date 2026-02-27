@@ -9,6 +9,31 @@ description: Diagnose and fix SwiftUI animation and scroll behavior by temporari
 
 Use MotionEyes as temporary observability for SwiftUI animation debugging. Instrument targeted values and geometry, capture time-series logs, compare observed motion against expected motion, apply fixes, re-validate, and clean up all agent-added tracing.
 
+## Use This Skill When
+
+- An animation moves in the wrong direction, starts too late, or ends too early.
+- Opacity, offset, or position changes do not match expected timing.
+- Two elements drift or desynchronize during a transition.
+- ScrollView offsets jump, drift, or fail to restore.
+- You need evidence from runtime motion values rather than visual guesses.
+
+## Do Not Use If
+
+- The problem is unrelated to SwiftUI animation or scroll behavior.
+- You cannot reproduce the behavior in a simulator or device.
+
+## Agent Behavior Contract
+
+Follow these rules for every run:
+
+1. Confirm the complaint and expected behavior in measurable terms before instrumentation.
+2. Add only the minimum traces needed to test the complaint.
+3. Prefer XcodeBuildMCP for log capture; fall back to CLI log streaming if MCP is unavailable.
+4. Use semantic trace names that map directly to the user intent.
+5. Preserve all pre-existing MotionEyes instrumentation.
+6. Remove only agent-added MotionEyes imports, modifiers, and metrics after validation.
+7. Re-run after fixes and verify against logs, not assumptions.
+
 ## Workflow
 
 Follow this exact order:
@@ -18,27 +43,44 @@ Follow this exact order:
 3. Ensure MotionEyes availability; if missing, auto-integrate the MotionEyes package into the app target before continuing.
 4. Add temporary `.motionTrace(...)` instrumentation with `Trace.value`, `Trace.geometry`, and (for scroll issues) `Trace.scrollGeometry` metrics named after user intent.
 5. Run the app and reproduce the issue.
-6. Capture logs with XcodeBuildMCP first; fallback to CLI log streaming if MCP is unavailable.
+6. Capture logs with XcodeBuildMCP first; fall back to CLI log streaming if MCP is unavailable.
 7. Analyze how values evolve over time versus expected behavior.
 8. Implement a fix, rerun, and verify the motion now matches intent.
-9. Remove only agent-added MotionEyes imports/modifiers/trace metrics from this run; never remove user-authored pre-existing MotionEyes code.
+9. Remove only agent-added MotionEyes imports, modifiers, and trace metrics from this run; never remove user-authored pre-existing MotionEyes code.
+
+## Quick Decision Tree
+
+1. If you need to observe a single value changing over time, start with `Trace.value`.
+2. If the issue involves layout relationships or sibling positioning, add `Trace.geometry` with `space: .swiftUI(.global), source: .layout`.
+3. If visible movement on screen differs from layout values, add a second `Trace.geometry` with `space: .screen, source: .presentation`.
+4. If the bug involves scrolling or restoration, use `Trace.scrollGeometry` on the `ScrollView` container.
+
+## Triage-First Playbook
+
+- Fade or visibility mismatch: `Trace.value("opacity", opacity)`.
+- Offset or translation issues: `Trace.value("offset", CGPoint(x: offset.width, y: offset.height))`.
+- Position drift between elements: `Trace.geometry` for both views in the same space.
+- Timing mismatch: trace the driving state with `Trace.value` plus one geometry metric.
+- Scroll jumps or restoration drift: `Trace.scrollGeometry` with `contentOffset` and `visibleRect` metrics.
+- Unexpected motion when something should remain still: `Trace.geometry` in `.screen + .presentation`.
 
 ## Instrumentation Rules
 
 Add instrumentation only to the minimum set of views needed to test the complaint.
 
 - Use stable, semantic trace names that match the user complaint.
-- Set the values to the same name as the property, so it's easier to identify.
-- Use geometry tracing when motion is relative to container or sibling layout, or when checking true on-screen presentation movement.
+- Set the values to the same name as the property, so it is easier to identify.
+- Use geometry tracing when motion is relative to container or sibling layout.
 - Use scroll geometry tracing when the bug involves `ScrollView` offset, visible region, content size, insets, or restoration behavior.
-- Place `Trace.scrollGeometry` on the `ScrollView` container (or an immediate descendant bound to the same scroll context), not on unrelated overlays.
+- Place `Trace.scrollGeometry` on the `ScrollView` container or an immediate descendant bound to the same scroll context.
 
 Choose geometry mode based on intent:
+
 - Layout relationship in SwiftUI coordinates: `space: .swiftUI(.global), source: .layout`
 - Window-relative layout motion: `space: .window, source: .layout`
-- Physical screen-visible motion (including presentation wiggle): `space: .screen, source: .presentation`
+- Physical screen-visible motion: `space: .screen, source: .presentation`
 
-Example template:
+### Example Template
 
 ```swift
 import MotionEyes
@@ -74,7 +116,7 @@ struct CardMotionExample: View {
 }
 ```
 
-Scroll-focused template:
+### Scroll-Focused Template
 
 ```swift
 ScrollView {
@@ -95,9 +137,7 @@ Prefer XcodeBuildMCP:
 1. Call `mcp__XcodeBuildMCP__session_show_defaults`.
 2. Set missing defaults with `mcp__XcodeBuildMCP__session_set_defaults`.
 3. Build and run with `mcp__XcodeBuildMCP__build_run_sim` if needed.
-4. Start capture with `mcp__XcodeBuildMCP__start_sim_log_cap`:
-   - `captureConsole: true`
-   - `subsystemFilter: "MotionEyes"` (or broader `"all"` when needed)
+4. Start capture with `mcp__XcodeBuildMCP__start_sim_log_cap` using `captureConsole: true` and `subsystemFilter: "MotionEyes"`.
 5. Reproduce the animation.
 6. Stop capture with `mcp__XcodeBuildMCP__stop_sim_log_cap` and inspect returned logs.
 
@@ -127,6 +167,16 @@ Analyze:
 
 Do not force fixed thresholds globally; evaluate against the user’s stated expectation.
 
+## Verification Checklist
+
+- Trace names map directly to the user complaint.
+- Motion `Start` and `End` markers align with the expected interaction timeline.
+- Direction, timing, and shape match the expected motion.
+- Relative motion metrics stay within expected deltas.
+- The fix is verified by a second log capture.
+- Agent-added instrumentation is removed after validation.
+- The project still builds after cleanup.
+
 ## Cleanup Rules
 
 At the end of every run:
@@ -138,11 +188,11 @@ At the end of every run:
 
 ## Scenarios to Support
 
-- Fade timing bug: trace `opacity` and verify fade begins/ends when expected.
-- Wrong direction bug: trace Y-related value and confirm sign/trend match expected motion.
+- Fade timing bug: trace `opacity` and verify fade begins and ends when expected.
+- Wrong direction bug: trace Y-related value and confirm sign and trend match expected motion.
 - Relative motion bug: trace two objects and verify their positional relationship over time.
-- Scroll jump/restoration bug: trace `Trace.scrollGeometry` on the `ScrollView` and verify `contentOffset`/`visibleRect` progression through navigation and return paths.
-- No motion desired: if something is meant to remain static during transition.
+- Scroll jump or restoration bug: trace `Trace.scrollGeometry` on the `ScrollView` and verify `contentOffset` and `visibleRect` progression through navigation and return paths.
+- No motion desired: confirm a view remains stable during transitions.
 - Existing instrumentation safety: preserve user-authored MotionEyes traces.
 - MCP unavailable: use CLI log stream and continue analysis.
 - Missing package: auto-integrate MotionEyes, then execute normal workflow.
