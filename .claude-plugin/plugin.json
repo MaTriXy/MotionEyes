@@ -1,0 +1,27 @@
+{
+  "name": "motioneyes",
+  "displayName": "MotionEyes",
+  "version": "1.0.0",
+  "description": "Agent-first SwiftUI motion observability for debugging animations and scroll behavior with MotionEyes traces.",
+  "author": {
+    "name": "Edward Sanchez",
+    "email": "edwardsanchez@mac.com"
+  },
+  "homepage": "https://github.com/edwardsanchez/MotionEyes",
+  "repository": "https://github.com/edwardsanchez/MotionEyes",
+  "license": "UNLICENSED",
+  "keywords": [
+    "swiftui",
+    "animation",
+    "scrollview",
+    "debugging",
+    "observability",
+    "motion",
+    "ios",
+    "swift",
+    "xcodebuildmcp"
+  ],
+  "skills": [
+    "./skill/motioneyes-animation-debug"
+  ]
+}

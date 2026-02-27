@@ -89,6 +89,43 @@ Invoke it with:
 ```text
 $motioneyes-animation-debug
 ```
+
+### Claude Marketplace
+
+This repo includes `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` for Claude Code marketplace distribution.
+
+Personal usage:
+
+1. Add the marketplace.
+
+```text
+/plugin marketplace add edwardsanchez/MotionEyes
+```
+
+2. Install the skill.
+
+```text
+/plugin install motioneyes@motioneyes
+```
+
+Project configuration:
+
+```json
+{
+  "enabledPlugins": {
+    "motioneyes@motioneyes": true
+  },
+  "extraKnownMarketplaces": {
+    "motioneyes": {
+      "source": {
+        "source": "github",
+        "repo": "edwardsanchez/MotionEyes"
+      }
+    }
+  }
+}
+```
+
 ## Contributing
 
 Contributions are welcome. Please read `CONTRIBUTING.md` for the workflow, quality standards, and scope guidance.

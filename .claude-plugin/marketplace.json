@@ -1,0 +1,44 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "motioneyes",
+  "version": "1.0.0",
+  "owner": {
+    "name": "Edward Sanchez",
+    "email": "edwardsanchez@mac.com"
+  },
+  "metadata": {
+    "description": "Agent skill for SwiftUI animation and scroll debugging using MotionEyes traces."
+  },
+  "plugins": [
+    {
+      "name": "motioneyes",
+      "description": "SwiftUI motion observability and debugging workflow using MotionEyes runtime traces.",
+      "repository": "https://github.com/edwardsanchez/MotionEyes",
+      "version": "1.0.0",
+      "author": {
+        "name": "Edward Sanchez",
+        "email": "edwardsanchez@mac.com"
+      },
+      "license": "UNLICENSED",
+      "category": "development",
+      "keywords": [
+        "swiftui",
+        "animation",
+        "scrollview",
+        "debugging",
+        "observability",
+        "motion",
+        "ios",
+        "swift"
+      ],
+      "tags": [
+        "SwiftUI",
+        "Animation",
+        "Debugging",
+        "Observability",
+        "iOS"
+      ],
+      "source": "./"
+    }
+  ]
+}
