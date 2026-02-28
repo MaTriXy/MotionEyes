@@ -2,6 +2,13 @@ import SwiftUI
 
 public enum Trace {
     /// Traces a scalar or structured value over time.
+    ///
+    /// - Parameters:
+    ///   - propertyName: Label used in log output.
+    ///   - value: Value to sample over time.
+    ///   - precision: Decimal precision for logged values.
+    ///   - epsilon: Minimum delta required before values are emitted as changed.
+    /// - Returns: A metric to include in ``View/motionTrace(_:fps:engine:enabled:logger:_:)-3i2ie``.
     public static func value<V: MotionTraceValueConvertible>(
         _ propertyName: String,
         _ value: V,
@@ -29,6 +36,7 @@ public enum Trace {
     ///   - source: Layout (`.layout`) or visible presentation (`.presentation`) geometry.
     ///   - precision: Decimal precision for logged values.
     ///   - epsilon: Minimum delta required before values are emitted as changed.
+    /// - Returns: A metric to include in ``View/motionTrace(_:fps:engine:enabled:logger:_:)-3i2ie``.
 #if os(watchOS)
     public static func geometry(
         _ name: String = "geometry",
@@ -48,6 +56,16 @@ public enum Trace {
         )
     }
 #else
+    /// Traces view geometry in a selected coordinate `space` and `source`.
+    ///
+    /// - Parameters:
+    ///   - name: Metric label used in log output.
+    ///   - properties: Geometry components to emit (for example, `minY`, `height`).
+    ///   - space: Coordinate target for emitted values.
+    ///   - source: Layout (`.layout`) or visible presentation (`.presentation`) geometry.
+    ///   - precision: Decimal precision for logged values.
+    ///   - epsilon: Minimum delta required before values are emitted as changed.
+    /// - Returns: A metric to include in ``View/motionTrace(_:fps:engine:enabled:logger:_:)-3i2ie``.
     public static func geometry(
         _ name: String = "geometry",
         properties: Set<MotionGeometryProperty> = [.minX, .minY, .width, .height],
@@ -90,6 +108,13 @@ public enum Trace {
     }
 
     /// Traces `ScrollView` runtime geometry values (offset, visible rect, insets, size).
+    ///
+    /// - Parameters:
+    ///   - name: Metric label used in log output.
+    ///   - properties: Scroll geometry components to emit.
+    ///   - precision: Decimal precision for logged values.
+    ///   - epsilon: Minimum delta required before values are emitted as changed.
+    /// - Returns: A metric to include in ``View/motionTrace(_:fps:engine:enabled:logger:_:)-3i2ie``.
     public static func scrollGeometry(
         _ name: String = "scrollGeometry",
         properties: Set<MotionScrollGeometryProperty> = [

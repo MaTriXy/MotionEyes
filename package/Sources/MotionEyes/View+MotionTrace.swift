@@ -25,6 +25,15 @@ public extension View {
     /// Add one or more metrics using the `metrics` builder.
     /// For geometry tracing, use ``Trace/geometry(_:properties:space:source:precision:epsilon:)``
     /// to choose between layout geometry and presentation geometry.
+    ///
+    /// - Parameters:
+    ///   - viewName: Label used in log output for the traced view.
+    ///   - fps: Sampling rate in frames per second.
+    ///   - engine: Timing mechanism used to drive sampling.
+    ///   - enabled: Enables or disables tracing without removing the modifier.
+    ///   - logger: Logger used to emit trace lines.
+    ///   - metrics: Builder that returns the metrics to trace.
+    /// - Returns: A view that emits MotionEyes trace logs when enabled.
     @ViewBuilder
     func motionTrace(
         _ viewName: String,
