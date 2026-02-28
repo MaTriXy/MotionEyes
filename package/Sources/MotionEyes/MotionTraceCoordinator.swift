@@ -10,6 +10,7 @@ final class MotionTraceCoordinator {
         var epsilon: Double
         var current: [String: Double]
         var lastEmitted: [String: Double]?
+        var motionStart: [String: Double]?
         var hasBaseline = false
         var isInMotion = false
     }
@@ -130,8 +131,9 @@ final class MotionTraceCoordinator {
         for metricID in metricStates.keys.sorted() {
             guard var state = metricStates[metricID] else { continue }
             if state.isInMotion {
-                linesToEmit.append(markerLine(viewName: viewName, metricName: state.metricName, marker: "End", timestamp: now))
+                linesToEmit.append(endMarkerLine(viewName: viewName, metricName: state.metricName, timestamp: now, state: state))
                 state.isInMotion = false
+                state.motionStart = nil
                 metricStates[metricID] = state
             }
         }
@@ -150,7 +152,7 @@ final class MotionTraceCoordinator {
         logger = self.logger
 
         for (metricID, state) in metricStates where !ids.contains(metricID) && state.isInMotion {
-            linesToEmit.append(markerLine(viewName: viewName, metricName: state.metricName, marker: "End", timestamp: now))
+            linesToEmit.append(endMarkerLine(viewName: viewName, metricName: state.metricName, timestamp: now, state: state))
         }
 
         metricStates = metricStates.filter { ids.contains($0.key) }
@@ -173,7 +175,8 @@ final class MotionTraceCoordinator {
             precision: max(0, precision),
             epsilon: max(0, epsilon),
             current: [:],
-            lastEmitted: nil
+            lastEmitted: nil,
+            motionStart: nil
         )
 
         state.metricName = metricName
@@ -198,7 +201,8 @@ final class MotionTraceCoordinator {
             precision: max(0, precision),
             epsilon: max(0, epsilon),
             current: [:],
-            lastEmitted: nil
+            lastEmitted: nil,
+            motionStart: nil
         )
 
         state.metricName = metricName
@@ -236,14 +240,16 @@ final class MotionTraceCoordinator {
             if changed {
                 if !state.isInMotion {
                     linesToEmit.append(markerLine(viewName: viewName, metricName: state.metricName, marker: "Start", timestamp: now))
+                    state.motionStart = state.lastEmitted ?? state.current
                     state.isInMotion = true
                 }
 
                 linesToEmit.append(valueLine(viewName: viewName, state: state))
                 state.lastEmitted = state.current
             } else if state.isInMotion {
-                linesToEmit.append(markerLine(viewName: viewName, metricName: state.metricName, marker: "End", timestamp: now))
+                linesToEmit.append(endMarkerLine(viewName: viewName, metricName: state.metricName, timestamp: now, state: state))
                 state.isInMotion = false
+                state.motionStart = nil
             }
 
             metricStates[metricID] = state
@@ -293,6 +299,33 @@ final class MotionTraceCoordinator {
 
     private func markerLine(viewName: String, metricName: String, marker: String, timestamp: Date) -> String {
         "[MotionEyes][\(viewName)][\(metricName)] -- \(marker) \(formattedTimestamp(timestamp)) --"
+    }
+
+    private func endMarkerLine(viewName: String, metricName: String, timestamp: Date, state: MetricState) -> String {
+        let deltas = deltaComponents(state: state)
+        guard !deltas.isEmpty else {
+            return markerLine(viewName: viewName, metricName: metricName, marker: "End", timestamp: timestamp)
+        }
+
+        return markerLine(viewName: viewName, metricName: metricName, marker: "End", timestamp: timestamp) + " " + deltas
+    }
+
+    private func deltaComponents(state: MetricState) -> String {
+        guard let start = state.motionStart else { return "" }
+
+        let parts = state.current
+            .keys
+            .sorted()
+            .compactMap { key -> String? in
+                guard let startValue = start[key], let endValue = state.current[key] else {
+                    return nil
+                }
+
+                let delta = endValue - startValue
+                return "\(key)Delta=\(formatted(delta, precision: state.precision))"
+            }
+
+        return parts.joined(separator: " ")
     }
 
     private func emit(_ lines: [String], logger: Logger) {

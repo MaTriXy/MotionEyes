@@ -143,14 +143,14 @@ Log line format:
 ```text
 [MotionEyes][<View Name>][<Metric Name>] key=value key=value ...
 [MotionEyes][<View Name>][<Metric Name>] -- Start <timestamp> --
-[MotionEyes][<View Name>][<Metric Name>] -- End <timestamp> --
+[MotionEyes][<View Name>][<Metric Name>] -- End <timestamp> -- keyDelta=value keyDelta=value ...
 ```
 
 Behavior details:
 - First sample prints a baseline value line.
 - When a metric begins changing, MotionEyes prints `Start` with timestamp.
 - While changing, it prints sampled values at the configured FPS.
-- On the first stable tick after a change burst (or when tracing stops), MotionEyes prints `End` with timestamp.
+- On the first stable tick after a change burst (or when tracing stops), MotionEyes prints `End` with timestamp and per-property deltas from the last stable value.
 
 ## Demo App
 

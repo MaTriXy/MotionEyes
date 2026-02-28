@@ -46,6 +46,7 @@ final class MotionTraceCoordinatorTests: XCTestCase {
         XCTAssertTrue(lines[1].contains("-- Start "))
         XCTAssertTrue(lines[2].contains("value=0.50"))
         XCTAssertTrue(lines[3].contains("-- End "))
+        XCTAssertTrue(lines[3].contains("valueDelta=0.50"))
     }
 
     func testLoggerPayloadContainsViewAndMetricNames() {
@@ -113,6 +114,7 @@ final class MotionTraceCoordinatorTests: XCTestCase {
 
         XCTAssertTrue(lines.contains(where: { $0.contains("-- Start ") }))
         XCTAssertTrue(lines.contains(where: { $0.contains("-- End ") }))
+        XCTAssertTrue(lines.contains(where: { $0.contains("valueDelta=1.00") }))
     }
 
     func testScrollGeometryLikePayloadEmitsMarkersAndValues() {
@@ -158,5 +160,7 @@ final class MotionTraceCoordinatorTests: XCTestCase {
         XCTAssertTrue(lines[1].contains("-- Start "))
         XCTAssertTrue(lines[2].contains("contentOffsetY=14.50 visibleRectMinY=14.50"))
         XCTAssertTrue(lines[3].contains("-- End "))
+        XCTAssertTrue(lines[3].contains("contentOffsetYDelta=14.50"))
+        XCTAssertTrue(lines[3].contains("visibleRectMinYDelta=14.50"))
     }
 }
