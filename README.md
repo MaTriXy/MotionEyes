@@ -19,10 +19,10 @@ Skill demo:
 
 ## Visual Analysis Outputs
 
-`motioneyes-visual-analysis` can generate keyframe sprites, raw frame pairs, pixel diffs, and grid-localized diff views. The recommended interpretation flow is:
+`motioneyes-visual-analysis` can generate keyframe sprites, raw frame pairs, pixel diffs, and grid overlays for coordinate-localized analysis. The recommended interpretation flow is:
 
 1. Start with `frames/` + `diff/` to understand what changed.
-2. Use `grid/` + `diff_grid/` to localize and cite exact regions.
+2. Use `grid/` across a frame sequence to localize and cite exact regions (add `diff_grid/` when needed).
 
 Example artifacts from the `offset` demo scenario:
 
@@ -37,8 +37,8 @@ Example artifacts from the `offset` demo scenario:
 </p>
 
 <p>
-  <strong>Diff + grid (localized analysis)</strong><br/>
-  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-offset-diff-grid-0-1.png" alt="Offset diff grid frame pair 0 to 1" width="280" />
+  <strong>Grid sequence (frame-to-frame localization)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-offset-grid-sequence.png" alt="Offset grid sequence across three frames" width="820" />
 </p>
 
 ### GridGPT Dependency
