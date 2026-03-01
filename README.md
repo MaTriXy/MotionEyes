@@ -19,26 +19,27 @@ Skill demo:
 
 ## Visual Analysis Outputs
 
-`motioneyes-visual-analysis` can generate keyframe sprites, raw frame pairs, pixel diffs, and grid overlays for coordinate-indexed analysis. The recommended interpretation flow is:
+`motioneyes-visual-analysis` can generate keyframe sprites, grid overlays, and pixel diffs for motion analysis. The recommended interpretation flow is:
 
-1. Start with `grid/` + `sprite/` to track motion with coordinate labels across frames.
-2. Add `diff_grid/` when you need pairwise change maps; fall back to `frames/` + `diff/` if overlays obscure fine detail.
+1. Start with a clean keyframe sprite to understand overall motion progression.
+2. Use the matching grid sequence when you need coordinate-aware position checks.
+3. Use adjacent-frame diffs for precise pixel-change confirmation.
 
-Example artifacts from the `offset` demo scenario:
+Example artifacts below were generated from a focused demo sequence:
 
 <p>
-  <strong>Keyframe sprite (motion progression)</strong><br/>
-  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-offset-keyframes.jpg" alt="Offset keyframe sprite sheet" width="820" />
+  <strong>Keyframe sprite (clean motion progression, 5 selected frames)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-focused-keyframe-sequence-clean.png" alt="Clean keyframe sprite across five selected frames" width="980" />
 </p>
 
 <p>
-  <strong>Diff image (pixel-level change between adjacent frames)</strong><br/>
-  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-offset-diff-0-1.png" alt="Offset diff frame pair 0 to 1" width="280" />
+  <strong>Grid sequence (same 5 frames with coordinate labels)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-focused-grid-sequence.png" alt="Grid sequence across five selected frames" width="980" />
 </p>
 
 <p>
-  <strong>Grid sequence (frame-to-frame coordinate tracking)</strong><br/>
-  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-offset-grid-sequence.png" alt="Offset grid sequence across three frames" width="820" />
+  <strong>Adjacent diff sprite (4 selected-frame deltas)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-focused-diff-adjacent-sequence.png" alt="Raw adjacent selected-frame diffs across four panels" width="980" />
 </p>
 
 ### GridGPT Dependency
