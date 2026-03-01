@@ -1,6 +1,12 @@
 # Grid Overlay Notes
 
-This skill vendors GridGPT at `third_party/GridGPT` and follows the same approach:
+This skill uses GridGPT as a git submodule at `third_party/GridGPT` and follows the same approach:
+
+If the directory is missing after clone, run:
+
+```bash
+git submodule update --init --recursive
+```
 
 - Draw a light grid on top of the image.
 - Label each cell with an alphanumeric identifier.

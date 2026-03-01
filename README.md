@@ -17,6 +17,51 @@ Skill demo:
 
 ![MotionEyes skill demo](https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/trim.gif)
 
+## Visual Analysis Outputs
+
+`motioneyes-visual-analysis` can generate keyframe sprites, raw frame pairs, pixel diffs, and grid-localized diff views. The recommended interpretation flow is:
+
+1. Start with `frames/` + `diff/` to understand what changed.
+2. Use `grid/` + `diff_grid/` to localize and cite exact regions.
+
+Example artifacts from the `offset` demo scenario:
+
+<p>
+  <strong>Keyframe sprite (motion progression)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-offset-keyframes.jpg" alt="Offset keyframe sprite sheet" width="820" />
+</p>
+
+<p>
+  <strong>Diff image (pixel-level change between adjacent frames)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-offset-diff-0-1.png" alt="Offset diff frame pair 0 to 1" width="280" />
+</p>
+
+<p>
+  <strong>Diff + grid (localized analysis)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-offset-diff-grid-0-1.png" alt="Offset diff grid frame pair 0 to 1" width="280" />
+</p>
+
+### GridGPT Dependency
+
+Grid overlays require the GridGPT submodule at `third_party/GridGPT`.
+
+```bash
+git submodule update --init --recursive
+test -f third_party/GridGPT/arial.ttf
+```
+
+Generate analysis artifacts like the examples above:
+
+```bash
+python3 skill/motioneyes-visual-analysis/scripts/analyze_sequence.py \
+  --video /path/to/capture.mp4 \
+  --fps 15 \
+  --duration 1.0 \
+  --trim \
+  --diff-grid \
+  --output /path/to/report
+```
+
 ## How It Works
 
 ### End-to-End Flow
