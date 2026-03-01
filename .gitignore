@@ -3,6 +3,9 @@
 .swiftpm/
 package/.build/
 package/.swiftpm/
+build/*
+!build/.gitkeep
+skill/motioneyes-visual-analysis/.venv/
 
 # Xcode
 DerivedData/

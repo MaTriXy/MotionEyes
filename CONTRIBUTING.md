@@ -20,6 +20,10 @@ Thanks for helping improve MotionEyes. This repo ships both a Swift package and 
 - Use current MotionEyes APIs in examples, including `space` and `source` for `Trace.geometry`.
 - Prefer MCP-driven log capture and provide CLI fallback.
 - Preserve the front matter schema at the top of `SKILL.md`.
+## Visual Analysis Scripts
+
+- The visual analysis scripts live under `skill/motioneyes-visual-analysis/scripts/`.
+- Python dependencies should be declared in `skill/motioneyes-visual-analysis/requirements.txt`.
 
 ## Package Update Standards
 

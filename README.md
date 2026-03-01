@@ -8,13 +8,63 @@ MotionEyes is an agent-first SwiftUI motion observability system.
 
 MotionEyes combines:
 - `package/`: runtime tracing primitives that emit motion data over time (`.motionTrace`, `Trace.value`, `Trace.geometry`, `Trace.scrollGeometry`)
-- `skill/`: an agent workflow (`motioneyes-animation-debug`) that installs or integrates the package, adds focused traces, captures logs, and validates behavior against intent
+- `skill/motioneyes-animation-debug`: installs or integrates the package, adds focused traces, captures logs, and validates behavior against intent
+- `skill/motioneyes-visual-analysis`: analyzes frame sequences with computer vision and produces annotated images plus JSON summaries
 
 The goal is to let agents read real motion, geometry, and scroll values from logs instead of guessing from code.
 
 Skill demo:
 
 ![MotionEyes skill demo](https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/trim.gif)
+
+## Visual Analysis Outputs
+
+`motioneyes-visual-analysis` can generate keyframe sprites, grid overlays, and pixel diffs for motion analysis. The recommended interpretation flow is:
+
+1. Start with a clean keyframe sprite to understand overall motion progression.
+2. Use the matching grid sequence when you need coordinate-aware position checks.
+3. Use adjacent-frame diffs for precise pixel-change confirmation.
+
+Example artifacts below were generated from a focused demo sequence:
+
+<p>
+  <strong>Keyframe sprite (clean motion progression, 5 selected frames)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-focused-keyframe-sequence-clean.png" alt="Clean keyframe sprite across five selected frames" width="980" />
+</p>
+
+<p>
+  <strong>Grid sequence (same 5 frames with coordinate labels)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-focused-grid-sequence.png" alt="Grid sequence across five selected frames" width="980" />
+</p>
+
+<p>
+  <strong>Adjacent diff sprite (4 selected-frame deltas)</strong><br/>
+  <img src="https://raw.githubusercontent.com/edwardsanchez/MotionEyes/assets/.github/assets/visual-analysis-focused-diff-adjacent-sequence.png" alt="Raw adjacent selected-frame diffs across four panels" width="980" />
+</p>
+
+### GridGPT Dependency
+
+Grid overlays require the GridGPT submodule at `third_party/GridGPT`.
+
+```bash
+git submodule update --init --recursive
+test -f third_party/GridGPT/arial.ttf && echo "GridGPT font OK" || echo "GridGPT font missing"
+pip3 install -r skill/motioneyes-visual-analysis/requirements.txt
+```
+
+Generate analysis artifacts like the examples above:
+
+```bash
+python3 skill/motioneyes-visual-analysis/scripts/analyze_sequence.py \
+  --video /path/to/capture.mp4 \
+  --fps 15 \
+  --duration 1.0 \
+  --trim \
+  --diff-grid \
+  --output /path/to/report
+```
+
+By default, diff outputs are rendered for keyframe-related pairs only. Add `--all-pairs` when you need `diff/` and `diff_grid/` for every consecutive frame pair.
 
 ## How It Works
 
@@ -52,10 +102,15 @@ xcrun simctl spawn booted log stream \
 
 - `.transition` visual behavior is not directly observable when no measurable underlying value is exposed.
 
+## Skills
+
+See `skill/SKILLS.md` for guidance on when to use each skill.
+
 ### Repository Layout
 
 - `package/`: MotionEyes Swift package
 - `skill/motioneyes-animation-debug/`: MotionEyes agent skill
+- `skill/motioneyes-visual-analysis/`: Frame-based visual analysis skill
 - `skill/motioneyes-animation-debug/SKILL.md`: Skill workflow definition
 
 ### Package Quick Start
