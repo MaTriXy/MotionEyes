@@ -1,4 +1,4 @@
 interface:
   display_name: "MotionEyes Visual Analysis"
   short_description: "Analyze UI motion from frames using CV + vision."
-  default_prompt: "Analyze the provided UI frames or capture a short sequence, then output annotated images plus a JSON summary of motion (translation, scale, rotation, opacity, color) and changed regions."
+  default_prompt: "Analyze the provided UI frames or capture a short sequence. Use a two-pass method: infer motion from frames+diff first, then use grid/diff_grid for localization. Start with keyframe pairs and escalate to neighboring pairs or all-pairs when confidence is low. For each major claim, cite frame pair, artifact types, and confidence. Output annotated images plus analysis.json and summary.md."

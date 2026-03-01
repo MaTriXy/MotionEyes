@@ -6,6 +6,8 @@
 - Label frames explicitly and describe order (left-to-right or top-to-bottom).
 - Prefer sprite sheets or grids for temporal relationships.
 - Avoid alpha-blended stacks of frames; they obscure details.
+- Treat `diff` as evidence of change, not full semantic context.
+- Use a two-pass read: first `frames` + `diff`, then `grid`/`diff_grid` for coordinate localization.
 
 ## Deterministic Computer Vision
 
@@ -27,3 +29,5 @@
 - Use CV to generate diffs and metrics first.
 - Use vision-style summary only after you have highlighted changes.
 - Keep key frames for summary even when analyzing all frames.
+- Start with keyframe pairs, then escalate to neighboring pairs and `--all-pairs` only when confidence is low.
+- For each major claim, cite frame pair(s), artifact type(s), and confidence.

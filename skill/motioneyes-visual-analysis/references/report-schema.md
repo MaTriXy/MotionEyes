@@ -58,3 +58,21 @@
 ```text
 The primary motion is rightward (~5 px) with slight upward drift. Diff deltas peak at frames 3 and 5, indicating the most visible change during the mid animation. Opacity decreases slightly and there is minimal color shift.
 ```
+
+## Evidence Expectations for `summary.md`
+
+To improve reliability, major claims should include:
+
+- frame pair reference (for example `pair 3->4`)
+- artifact reference (`frames`, `diff`, `grid`, `diff_grid`, or `sprite`)
+- confidence score (`0.0-1.0`)
+
+Example style:
+
+```text
+Claim: The card moves rightward between frames 3->4.
+Evidence: frames/frame_003.png + frames/frame_004.png + diff/diff_3_4.png.
+Confidence: 0.86.
+```
+
+If confidence is low (<0.7), expand inspection to neighboring pairs or rerun with `--all-pairs` before finalizing conclusions.
