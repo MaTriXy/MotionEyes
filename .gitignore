@@ -3,7 +3,8 @@
 .swiftpm/
 package/.build/
 package/.swiftpm/
-build/vision-report/
+build/*
+!build/.gitkeep
 skill/motioneyes-visual-analysis/.venv/
 
 # Xcode
