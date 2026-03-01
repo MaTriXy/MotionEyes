@@ -47,7 +47,8 @@ Grid overlays require the GridGPT submodule at `third_party/GridGPT`.
 
 ```bash
 git submodule update --init --recursive
-test -f third_party/GridGPT/arial.ttf
+test -f third_party/GridGPT/arial.ttf && echo "GridGPT font OK" || echo "GridGPT font missing"
+pip3 install -r skill/motioneyes-visual-analysis/requirements.txt
 ```
 
 Generate analysis artifacts like the examples above:
@@ -61,6 +62,8 @@ python3 skill/motioneyes-visual-analysis/scripts/analyze_sequence.py \
   --diff-grid \
   --output /path/to/report
 ```
+
+By default, diff outputs are rendered for keyframe-related pairs only. Add `--all-pairs` when you need `diff/` and `diff_grid/` for every consecutive frame pair.
 
 ## How It Works
 
