@@ -458,7 +458,7 @@ def main():
     parser.add_argument(
         "--diff-grid",
         action="store_true",
-        help="Generate diff images with grid overlay for faster localization.",
+        help="Generate diff images with grid overlay for faster coordinate pinpointing.",
     )
     parser.add_argument("--trim", action="store_true", help="Auto-trim to the motion window.")
     parser.add_argument("--trim-threshold", type=float, default=3.0, help="Minimum mean abs diff to detect motion.")
@@ -541,7 +541,9 @@ def main():
     for idx, img in enumerate(frame_imgs):
         cv2.imwrite(str(frame_paths[idx]), img)
 
+    grid_frame_imgs = None
     if not args.no_grid:
+        grid_frame_imgs = []
         for idx, img in enumerate(frame_imgs):
             grid_img = add_grid_overlay(
                 img,
@@ -549,6 +551,7 @@ def main():
                 GRIDGPT_FONT if GRIDGPT_FONT.exists() else None,
                 theme=args.grid_theme,
             )
+            grid_frame_imgs.append(grid_img)
             cv2.imwrite(str(grid_dir / f"frame_{idx:03d}.png"), grid_img)
 
     diff_scores = compute_mean_abs_diffs(list(zip(frame_paths, frame_imgs)))
@@ -611,7 +614,9 @@ def main():
     }
     motion.update(affine_params)
 
-    make_sprite_sheet(frame_imgs, keyframes, sprite_dir / "keyframes.jpg")
+    sprite_frames = grid_frame_imgs if grid_frame_imgs is not None else frame_imgs
+    sprite_source = "grid" if grid_frame_imgs is not None else "frames"
+    make_sprite_sheet(sprite_frames, keyframes, sprite_dir / "keyframes.jpg")
 
     summary = build_summary(motion, keyframes, diff_scores)
 
@@ -625,6 +630,7 @@ def main():
         "resolution": {"width": frame_imgs[0].shape[1], "height": frame_imgs[0].shape[0]},
         "resized": resized,
         "trim": trim_info,
+        "sprite_source": sprite_source,
     }
 
     analysis = {

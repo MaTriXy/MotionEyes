@@ -7,7 +7,7 @@
 - Prefer sprite sheets or grids for temporal relationships.
 - Avoid alpha-blended stacks of frames; they obscure details.
 - Treat `diff` as evidence of change, not full semantic context.
-- Use a two-pass read: first `frames` + `diff`, then `grid`/`diff_grid` for coordinate localization.
+- Use a two-pass read: first `grid`/`sprite` (and `diff_grid` when needed), then `frames` + `diff` if overlays obscure subtle details.
 
 ## Deterministic Computer Vision
 

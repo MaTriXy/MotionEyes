@@ -29,12 +29,13 @@ Follow this order:
 1. Capture or gather frames for the target animation.
 2. Normalize frames (same size, consistent crop).
 3. Run baseline analysis with `--trim` to generate frames, diffs, and keyframes.
-4. Interpret motion using non-grid artifacts first (`frames/` + `diff/`), then use grid artifacts for localization (`grid/` + `diff_grid/` when enabled).
-5. Escalate from keyframe pairs to neighboring pairs and then `--all-pairs` only when confidence is low or anomalies are suspected.
-6. Select key frames (start/mid/end + top delta frames) for summary.
-7. Write `analysis.json` and `summary.md`.
-8. If validating the skill itself, optionally generate an HTML report with `--report`.
-9. Use `--trim-threshold` and `--trim-relative` tuning if the animation is subtle.
+4. Interpret motion using grid artifacts first (`grid/` + `sprite/`, plus `diff_grid/` when needed) for coordinate-indexed reading across frames.
+5. If grid overlays obscure subtle visual details, fall back to non-grid artifacts (`frames/` + `diff/`) for verification.
+6. Escalate from keyframe pairs to neighboring pairs and then `--all-pairs` only when confidence is low or anomalies are suspected.
+7. Select key frames (start/mid/end + top delta frames) for summary.
+8. Write `analysis.json` and `summary.md`.
+9. If validating the skill itself, optionally generate an HTML report with `--report`.
+10. Use `--trim-threshold` and `--trim-relative` tuning if the animation is subtle.
 
 ## Artifact Decision Matrix
 
@@ -42,13 +43,13 @@ Use this matrix to choose which artifacts to rely on.
 
 | Goal | `frames/` | `grid/` | `diff/` | `diff_grid/` | `sprite/` | Pair scope |
 | --- | --- | --- | --- | --- | --- | --- |
-| Fast first pass (unknown issue) | Yes | Yes | Yes | No | Yes | Keyframe pairs |
-| On-screen localization ("where?") | Yes | Yes | Yes | Yes | Yes | Keyframe pairs |
+| Fast first pass (unknown issue) | Optional | Yes | Yes | Optional | Yes | Keyframe pairs |
+| On-screen coordinate pinpointing ("where?") | Optional | Yes | Optional | Optional | Yes | Keyframe pairs |
 | Pixel-change inspection ("what changed?") | Yes | Optional | Yes | Optional | Optional | Keyframe pairs |
 | Timing/story summary | Optional | Yes | Optional | No | Yes | Keyframe pairs |
-| Flicker / dropped-frame suspicion | Yes | Optional | Yes | Optional | Yes | All pairs |
-| Regression verification across builds | Yes | Optional | Yes | Optional | Optional | All pairs |
-| Visual design/polish review | Yes | No | Optional | No | Yes | Keyframe pairs |
+| Flicker / dropped-frame suspicion | Yes | Yes | Yes | Optional | Yes | All pairs |
+| Regression verification across builds | Yes | Yes | Yes | Optional | Optional | All pairs |
+| Visual design/polish review | Yes | No | Optional | No | Optional | Keyframe pairs |
 
 ## Claim-Evidence Contract
 
@@ -59,6 +60,7 @@ Every conclusion in `summary.md` must cite evidence explicitly.
   - frame pair index (for example `pair 12->13`)
   - artifact types used (`frames`, `diff`, optionally `grid` or `diff_grid`)
   - confidence score (`0.0-1.0`)
+- Prefer coordinate-indexed references from `grid/` or `sprite/` when available.
 - If confidence is below `0.7`, do not finalize. Escalate pair coverage first.
 - If `diff` indicates change but frame context is ambiguous, mark as uncertain and inspect neighboring pairs.
 
@@ -118,7 +120,7 @@ python3 scripts/capture_sim_frames.py \
 
 - Diff images are generated between **consecutive frames** (frame _n_ vs _n+1_).
 - By default, only keyframe pairs are rendered. Use `--all-pairs` to render every pair.
-- Use `--diff-grid` to overlay the alphanumeric grid on diff images for faster localization.
+- Use `--diff-grid` to overlay the alphanumeric grid on diff images for faster coordinate pinpointing.
 - Use `--grid-theme auto|light|dark` to ensure the grid is readable on dark or light backgrounds.
 - Treat diff output as a **change detector**, not standalone semantic truth.
 
@@ -138,13 +140,13 @@ The analyzer writes to the `--output` directory:
 - `grid/`: frames with alphanumeric grid overlay.
 - `diff/`: absolute diff images.
 - `diff_grid/`: diff images with grid overlay (when `--diff-grid` is enabled).
-- `sprite/`: keyframe sprite sheet.
+- `sprite/`: keyframe sprite sheet (grid-overlaid by default, raw only when `--no-grid` is used).
 
 Interpretation guidance:
 
-- Use `frames/` + `diff/` first for motion interpretation.
-- Use `grid/` + `diff_grid/` to cite locations and make findings reproducible.
-- Grid is recommended as a default generated artifact for debugging, but non-grid frames remain primary for subtle visual judgment.
+- Start with grid artifacts (`grid/` + `sprite/`) for coordinate-indexed motion interpretation.
+- Add `diff_grid/` when you need pairwise change maps with coordinate labels.
+- If overlays obscure subtle visual details, fall back to non-grid `frames/` + `diff/`.
 
 ## Scripts
 
@@ -159,7 +161,7 @@ If the capture includes idle time before/after the animation, add `--trim` to au
 Recommended profiles:
 
 ```bash
-# Default summary + localization-ready artifacts
+# Default summary + coordinate-indexed artifacts
 python3 scripts/analyze_sequence.py --video /path/to/capture.mp4 --fps 15 --duration 1.0 --trim --diff-grid --output /path/to/report
 
 # Deep investigation for flicker/regression
