@@ -228,7 +228,6 @@ private struct MotionTraceRuntimeOverlay: View {
                 }
             }
         }
-        .frame(width: 0, height: 0)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .onAppear {
@@ -337,7 +336,6 @@ private struct MotionSwiftUILayoutGeometryProbeView: View {
             } action: { newFrame in
                 onFrameChange(newFrame)
             }
-            .frame(width: 0, height: 0)
     }
 }
 
@@ -355,16 +353,14 @@ private struct MotionPlatformGeometryProbeView: View {
             source: source,
             onFrameChange: onFrameChange
         )
-        .frame(width: 0, height: 0)
         #elseif canImport(AppKit) && os(macOS)
         MotionAppKitGeometryProbeRepresentable(
             space: space,
             source: source,
             onFrameChange: onFrameChange
         )
-        .frame(width: 0, height: 0)
         #else
-        Color.clear.frame(width: 0, height: 0)
+        Color.clear
         #endif
     }
 }
