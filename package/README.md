@@ -13,6 +13,7 @@ It provides:
 - Changed-only log emission
 - Geometry tracing (`minX`, `minY`, `width`, `height`, etc.)
 - Scroll geometry tracing (`contentOffset`, `visibleRect`, `contentSize`, etc.)
+- Scalar smoothness scoring for sampled traces (`MotionSmoothness`)
 - `Logger` output filterable by subsystem/category
 
 ## Installation
@@ -105,7 +106,29 @@ public enum Trace {
         epsilon: Double = 0.1
     ) -> MotionTraceMetric
 }
+
+public enum MotionSmoothness {
+    static func isSmooth(
+        _ values: [Double],
+        minimumSmoothness: Double = 0.8,
+        epsilon: Double = 0.0001
+    ) -> Bool
+
+    static func evaluate(
+        _ values: [Double],
+        epsilon: Double = 0.0001
+    ) -> MotionSmoothnessResult
+}
 ```
+
+Smoothness example:
+
+```swift
+let samples = [0.0, 0.08, 0.22, 0.45, 0.71, 0.91, 1.0]
+XCTAssertTrue(MotionSmoothness.isSmooth(samples, minimumSmoothness: 0.9))
+```
+
+`MotionSmoothness` is a discrete-value continuity heuristic. It is useful in tests for catching abrupt local jumps in traced values, but it does not prove real render-time frame pacing or GPU smoothness. It also intentionally does not reject direction changes or overshoot on its own, so backtracking should be asserted separately when that matters.
 
 Note: On watchOS, the `Trace.geometry` defaults fall back to `space: .swiftUI(.global)` and `source: .layout` because screen/presentation geometry is unavailable.
 

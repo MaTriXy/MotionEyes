@@ -1,13 +1,13 @@
 ---
 name: motioneyes-animation-debug
-description: Diagnose and fix SwiftUI animation and scroll behavior by temporarily instrumenting views with MotionEyes, capturing console traces over time, and comparing motion data to user intent. Use when users report bugs such as wrong direction, premature fade, timing or easing mismatch, unexpected movement, missing movement, incorrect relative movement between views, scroll jumps, scroll restoration drift, or content-offset desynchronization. Prefer XcodeBuildMCP log capture first and fallback to CLI log streaming; remove only agent-added MotionEyes instrumentation after validation.
+description: Diagnose, fix, or validate SwiftUI animation and scroll behavior by temporarily instrumenting views with MotionEyes, capturing console traces over time, and comparing motion data to user intent or test expectations. Use when users report bugs such as wrong direction, premature fade, timing or easing mismatch, unexpected movement, missing movement, incorrect relative movement between views, scroll jumps, scroll restoration drift, content-offset desynchronization, or when they want to turn MotionEyes traces into focused assertions. Prefer XcodeBuildMCP log capture first and fallback to CLI log streaming; remove only agent-added MotionEyes instrumentation after validation.
 ---
 
 # MotionEyes Animation Debug
 
 ## Overview
 
-Use MotionEyes as temporary observability for SwiftUI animation debugging. Instrument targeted values and geometry, capture time-series logs, compare observed motion against expected motion, apply fixes, re-validate, and clean up all agent-added tracing.
+Use MotionEyes as temporary observability for SwiftUI animation debugging and regression validation. Instrument targeted values and geometry, capture time-series logs, compare observed motion against expected motion, apply fixes or assertions, re-validate, and clean up all agent-added tracing.
 
 ## Use This Skill When
 
@@ -16,6 +16,7 @@ Use MotionEyes as temporary observability for SwiftUI animation debugging. Instr
 - Two elements drift or desynchronize during a transition.
 - ScrollView offsets jump, drift, or fail to restore.
 - You need evidence from runtime motion values rather than visual guesses.
+- You want to turn MotionEyes traces into UITest or regression assertions for timing, continuity, or backtracking.
 
 ## Do Not Use If
 
@@ -33,6 +34,7 @@ Follow these rules for every run:
 5. Preserve all pre-existing MotionEyes instrumentation.
 6. Remove only agent-added MotionEyes imports, modifiers, and metrics after validation.
 7. Re-run after fixes and verify against logs, not assumptions.
+8. Treat continuity, direction, and timing as separate concerns; do not use one heuristic as a proxy for all three.
 
 ## Workflow
 
@@ -44,8 +46,8 @@ Follow this exact order:
 4. Add temporary `.motionTrace(...)` instrumentation with `Trace.value`, `Trace.geometry`, and (for scroll issues) `Trace.scrollGeometry` metrics named after user intent.
 5. Run the app and reproduce the issue.
 6. Capture logs with XcodeBuildMCP first; fall back to CLI log streaming if MCP is unavailable.
-7. Analyze how values evolve over time versus expected behavior.
-8. Implement a fix, rerun, and verify the motion now matches intent.
+7. Analyze how values evolve over time versus expected behavior or extract a focused sample window for assertions.
+8. Implement a fix or add an assertion, rerun, and verify the motion now matches intent.
 9. Remove only agent-added MotionEyes imports, modifiers, and trace metrics from this run; never remove user-authored pre-existing MotionEyes code.
 
 ## Intent Mapping (Screen vs Layout vs Local)
@@ -186,11 +188,36 @@ Analyze:
 
 Do not force fixed thresholds globally; evaluate against the user’s stated expectation.
 
+## Automated Trace Assertions
+
+Use this mode when the user wants a testable pass or fail signal rather than a one-off debugging read.
+
+1. Choose one metric and one component that directly represents the complaint.
+2. Isolate the sample window from `Start` to `End` for that specific motion burst.
+3. Keep assertion types separate:
+   - continuity: abrupt local jumps or freezes
+   - direction or monotonicity: whether the trace backtracks
+   - timing: whether `Start`, `End`, or duration match expectation
+4. For continuity checks, use `MotionSmoothness` on the extracted scalar samples.
+5. Treat `MotionSmoothness` as a local continuity heuristic only:
+   - good for abrupt mid-curve jumps
+   - not proof of render-time frame pacing
+   - does not reject overshoot or backtracking on its own
+6. If the user cares about “went back on itself,” add a separate monotonicity or reversal assertion.
+7. If sample count is too low or timestamps are irregular enough to undermine confidence, say so and escalate to visual analysis.
+
+Threshold guidance:
+
+- Do not hardcode one universal pass value for every animation style.
+- Start from the user’s actual intent and tune with a known-good baseline trace when possible.
+- Linear or tightly controlled traces can use stricter thresholds than eased or springy motion.
+
 ## Verification Checklist
 
 - Trace names map directly to the user complaint.
 - Motion `Start` and `End` markers align with the expected interaction timeline.
 - Direction, timing, and shape match the expected motion.
+- Continuity checks and monotonicity checks are not conflated.
 - Relative motion metrics stay within expected deltas.
 - The fix is verified by a second log capture.
 - Agent-added instrumentation is removed after validation.
@@ -212,10 +239,11 @@ At the end of every run:
 - Relative motion bug: trace two objects and verify their positional relationship over time.
 - Scroll jump or restoration bug: trace `Trace.scrollGeometry` on the `ScrollView` and verify `contentOffset` and `visibleRect` progression through navigation and return paths.
 - No motion desired: confirm a view remains stable during transitions.
+- Regression or UITest assertion: extract a trace burst and assert continuity with `MotionSmoothness`, plus separate timing or monotonicity checks when needed.
 - Existing instrumentation safety: preserve user-authored MotionEyes traces.
 - MCP unavailable: use CLI log stream and continue analysis.
 - Missing package: auto-integrate MotionEyes, then execute normal workflow.
 
 ## Reference
 
-Load [references/motioneyes-observability-patterns.md](references/motioneyes-observability-patterns.md) when choosing metrics or interpreting trace behavior.
+Load [references/motioneyes-observability-patterns.md](references/motioneyes-observability-patterns.md) when choosing metrics, interpreting trace behavior, or defining MotionEyes-based assertions.

@@ -1,7 +1,7 @@
 interface:
   display_name: "MotionEyes Animation Debug"
-  short_description: "Debug SwiftUI animation and scroll behavior with MotionEyes logs"
-  default_prompt: "Use $motioneyes-animation-debug to diagnose a SwiftUI animation or ScrollView behavior that behaves incorrectly."
+  short_description: "Debug or validate SwiftUI animation and scroll behavior with MotionEyes traces"
+  default_prompt: "Use $motioneyes-animation-debug to diagnose or validate a SwiftUI animation or ScrollView behavior with MotionEyes traces."
 dependencies:
   tools:
     - type: "mcp"

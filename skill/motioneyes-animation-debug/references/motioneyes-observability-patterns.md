@@ -123,6 +123,28 @@ Read logs in sequence for each metric:
 3. Sample evolution at configured FPS.
 4. `End`.
 
+## Trace Assertions
+
+Use MotionEyes traces for assertions only when the trace metric maps directly to the thing the user cares about.
+
+Keep these checks separate:
+
+- Continuity:
+  - Detect abrupt local jumps or freezes in a scalar trace.
+  - Use `MotionSmoothness` on samples from one `Start` to `End` burst.
+  - Interpret this as sampled-value continuity, not render-time frame pacing.
+- Monotonicity or backtracking:
+  - Use a separate assertion when the user cares whether a value reverses direction.
+  - Do not expect `MotionSmoothness` to fail spring overshoot or brief reversals by itself.
+- Timing:
+  - Compare `Start`, `End`, and total duration against the expected interaction.
+
+Assertion guidance:
+
+- Extract one scalar component at a time, such as `opacity.value`, `offset.y`, or `frame.minY`.
+- Prefer project-specific baselines over one global threshold.
+- If sample count is low or timestamps are irregular, lower confidence and consider visual analysis instead.
+
 ## Minimal Instrumentation Template
 
 ```swift
