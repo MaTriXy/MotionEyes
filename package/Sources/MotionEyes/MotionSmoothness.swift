@@ -58,7 +58,7 @@ public enum MotionSmoothness {
     /// backtracking, that should be a separate assertion.
     public static func evaluate(
         _ values: [Double],
-        epsilon: Double = 0.9
+        epsilon: Double = 0.0001
     ) -> MotionSmoothnessResult {
         let epsilon = max(0, epsilon)
 
