@@ -492,11 +492,8 @@ private struct MotionUIKitGeometryProbeRepresentable: UIViewRepresentable {
                 return nil
             }
 
-            if let superlayer = presentationLayer.superlayer {
-                return superlayer.convert(presentationLayer.frame, to: window.layer)
-            }
-
-            return view.convert(view.bounds, to: window)
+            let targetLayer = window.layer.presentation() ?? window.layer
+            return presentationLayer.convert(presentationLayer.bounds, to: targetLayer)
         }
     }
 }
